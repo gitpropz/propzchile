@@ -35,16 +35,14 @@ function AuthPage() {
   }, [navigate]);
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background px-4">
+    <div className="grid min-h-screen place-items-center bg-surface px-4 py-10">
       <div className="w-full max-w-md">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-2 text-foreground">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <Building2 className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">Propz</span>
+        <Link to="/" className="mb-8 flex items-center justify-center text-foreground">
+          <PropzLogo wordmarkClassName="text-xl" markClassName="h-9 w-9" />
         </Link>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+
           <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Iniciar sesión</TabsTrigger>
