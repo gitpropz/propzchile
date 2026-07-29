@@ -24,14 +24,14 @@ export function PropzMark({ className }: { className?: string }) {
       />
       {/* Flecha de crecimiento */}
       <path
-        d="M8 35 16.5 25l5.5 5.5L34 17"
+        d="M7 36.5 16.5 25.5l5.5 5.5L36.5 15"
         className="stroke-accent-brand"
         strokeWidth="4.2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M26.5 16.5H35v8.5"
+        d="M29 14.5h8.5V23"
         className="stroke-accent-brand"
         strokeWidth="4.2"
         strokeLinecap="round"
