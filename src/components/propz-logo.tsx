@@ -10,28 +10,37 @@ import { cn } from "@/lib/utils";
 export function PropzMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className={cn("h-8 w-8", className)}>
-      {/* Torres */}
-      <path d="M4 16.5 11 12v29H4z" className="fill-primary" />
-      <path d="M13.5 12 20.5 7.5V41h-7z" className="fill-primary" />
+      {/* Torres ascendentes */}
+      <path d="M3 18.5 9.5 14v28H3z" className="fill-primary" />
+      <path d="M12.5 13 19 8.5V42h-6.5z" className="fill-primary" />
+      {/* Cuerpo de la P */}
+      <path d="M22 8.5h6.5v33.5H22z" className="fill-primary" />
       {/* Arco de la P */}
       <path
-        d="M23 7.5h6.5C37.5 7.5 44 13.6 44 21.2S37.5 34.9 29.5 34.9H23"
+        d="M28.5 11.5h2.8c5.9 0 10.2 3.6 10.2 9s-4.3 9-10.2 9h-2.8"
         className="stroke-primary"
-        strokeWidth="7"
-        strokeLinecap="square"
+        strokeWidth="6"
+        strokeLinecap="butt"
       />
       {/* Flecha de crecimiento */}
       <path
-        d="M9 36.5 18 26l6.5 6.5L36 19.5"
+        d="M8 35 16.5 25l5.5 5.5L34 17"
         className="stroke-accent-brand"
-        strokeWidth="4.4"
+        strokeWidth="4.2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M28.5 18h9v9" className="stroke-accent-brand" strokeWidth="4.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M26.5 16.5H35v8.5"
+        className="stroke-accent-brand"
+        strokeWidth="4.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
+
 
 /** Logotipo horizontal: isotipo + wordmark (Propz con la z en verde). */
 export function PropzLogo({
