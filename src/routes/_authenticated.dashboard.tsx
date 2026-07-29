@@ -55,7 +55,7 @@ function unitTypeRank(t: string | null | undefined): number {
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Estado del Patrimonio inmobiliario — Cartera" }] }),
+  head: () => ({ meta: [{ title: "Estado del Patrimonio inmobiliario — Propz" }] }),
   component: Dashboard,
 });
 

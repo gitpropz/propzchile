@@ -16,7 +16,7 @@ function Index() {
             <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
               <Building2 className="h-5 w-5" />
             </div>
-            <span className="text-lg font-semibold tracking-tight">Cartera</span>
+            <span className="text-lg font-semibold tracking-tight">Propz</span>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/auth">
@@ -39,7 +39,7 @@ function Index() {
               Administra tus propiedades sin perder el control.
             </h1>
             <p className="mt-4 max-w-lg text-lg text-muted-foreground">
-              Cartera automatiza cobros, obligaciones y mantenciones. Tú decides lo importante;
+              Propz automatiza cobros, obligaciones y mantenciones. Tú decides lo importante;
               el sistema se encarga del resto y solo te avisa cuando realmente necesitas actuar.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -88,7 +88,7 @@ function Index() {
       </section>
 
       <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Cartera · Diseñado para propietarios de Chile
+        © {new Date().getFullYear()} Propz · Diseñado para propietarios de Chile
       </footer>
     </div>
   );

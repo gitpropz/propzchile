@@ -13,7 +13,7 @@ import { lovable } from "@/integrations/lovable/index";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Iniciar sesión — Cartera" },
+      { title: "Iniciar sesión — Propz" },
       { name: "description", content: "Accede a tu panel de administración de propiedades." },
     ],
   }),
@@ -41,7 +41,7 @@ function AuthPage() {
           <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
             <Building2 className="h-5 w-5" />
           </div>
-          <span className="text-lg font-semibold tracking-tight">Cartera</span>
+          <span className="text-lg font-semibold tracking-tight">Propz</span>
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -134,7 +134,7 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
         data: {
           full_name: fullName,
           phone: cleanPhone,
-          organization_name: orgName || "Mi Cartera",
+          organization_name: orgName || "Mi patrimonio",
         },
       },
     });
@@ -143,7 +143,7 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       toast.error("No pudimos crear tu cuenta", { description: error.message });
       return;
     }
-    toast.success("Bienvenido a Cartera");
+    toast.success("Bienvenido a Propz");
     onSuccess();
   }
 
@@ -156,7 +156,7 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="space-y-1.5">
         <Label htmlFor="su-org">Nombre de tu organización</Label>
         <Input id="su-org" value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Ej: Inversiones Familia Pérez" />
-        <p className="text-xs text-muted-foreground">Puedes cambiarlo después. Si lo dejas en blanco, usaremos "Mi Cartera".</p>
+        <p className="text-xs text-muted-foreground">Puedes cambiarlo después. Si lo dejas en blanco, usaremos "Mi patrimonio".</p>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="su-email">Email</Label>

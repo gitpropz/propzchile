@@ -8,7 +8,7 @@ const tabs = [
 ] as const;
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Configuración — Cartera" }] }),
+  head: () => ({ meta: [{ title: "Configuración — Propz" }] }),
   component: SettingsLayout,
 });
 

@@ -14,7 +14,7 @@ type Unit = Database["public"]["Tables"]["rentable_units"]["Row"] & {
 };
 
 export const Route = createFileRoute("/_authenticated/contracts/")({
-  head: () => ({ meta: [{ title: "Contratos — Cartera" }] }),
+  head: () => ({ meta: [{ title: "Contratos — Propz" }] }),
   component: ContractsIndex,
 });
 

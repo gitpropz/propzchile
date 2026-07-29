@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { UNIT_TYPE_OPTIONS, type UnitType } from "@/lib/property-types";
 
 export const Route = createFileRoute("/_authenticated/properties/$id/edit")({
-  head: () => ({ meta: [{ title: "Editar propiedad — Cartera" }] }),
+  head: () => ({ meta: [{ title: "Editar propiedad — Propz" }] }),
   component: EditProperty,
 });
 

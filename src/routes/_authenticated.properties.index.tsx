@@ -13,7 +13,7 @@ type PropertyRow = Database["public"]["Tables"]["properties"]["Row"] & {
 };
 
 export const Route = createFileRoute("/_authenticated/properties/")({
-  head: () => ({ meta: [{ title: "Propiedades — Cartera" }] }),
+  head: () => ({ meta: [{ title: "Propiedades — Propz" }] }),
   component: PropertiesIndex,
 });
 
