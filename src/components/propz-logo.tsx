@@ -7,18 +7,27 @@ import { cn } from "@/lib/utils";
  * construyen una "P", atravesadas por una flecha de crecimiento
  * en verde (#14C87B). Sin degradados ni efectos.
  */
-export function PropzMark({ className }: { className?: string }) {
+export function PropzMark({
+  className,
+  tone = "brand",
+}: {
+  className?: string;
+  /** "inverse" pinta la P en blanco para fondos azules (sidebar). */
+  tone?: "brand" | "inverse";
+}) {
+  const solid = tone === "inverse" ? "fill-white" : "fill-primary";
+  const line = tone === "inverse" ? "stroke-white" : "stroke-primary";
   return (
     <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className={cn("h-8 w-8", className)}>
       {/* Torres ascendentes */}
-      <path d="M3 18.5 9.5 14v28H3z" className="fill-primary" />
-      <path d="M12.5 13 19 8.5V42h-6.5z" className="fill-primary" />
+      <path d="M3 18.5 9.5 14v28H3z" className={solid} />
+      <path d="M12.5 13 19 8.5V42h-6.5z" className={solid} />
       {/* Cuerpo de la P */}
-      <path d="M22 8.5h6.5v33.5H22z" className="fill-primary" />
+      <path d="M22 8.5h6.5v33.5H22z" className={solid} />
       {/* Arco de la P */}
       <path
         d="M28.5 11.5h2.8c5.9 0 10.2 3.6 10.2 9s-4.3 9-10.2 9h-2.8"
-        className="stroke-primary"
+        className={line}
         strokeWidth="6"
         strokeLinecap="butt"
       />
@@ -47,17 +56,19 @@ export function PropzLogo({
   className,
   wordmarkClassName,
   markClassName,
+  tone = "brand",
   tagline = false,
 }: {
   className?: string;
   wordmarkClassName?: string;
   markClassName?: string;
+  tone?: "brand" | "inverse";
   /** Muestra el eslogan oficial bajo el wordmark. */
   tagline?: boolean;
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <PropzMark className={markClassName} />
+      <PropzMark className={markClassName} tone={tone} />
       <span className="flex flex-col leading-none">
         <span
           className={cn("font-display text-[1.25rem] font-bold tracking-[-0.03em]", wordmarkClassName)}

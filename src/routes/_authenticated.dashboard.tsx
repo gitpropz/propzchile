@@ -55,7 +55,7 @@ function unitTypeRank(t: string | null | undefined): number {
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Estado del Patrimonio inmobiliario — Propz" }] }),
+  head: () => ({ meta: [{ title: "Estado del Patrimonio Inmobiliario — Propz" }] }),
   component: Dashboard,
 });
 
@@ -417,7 +417,7 @@ function Dashboard() {
     <div className="mx-auto max-w-6xl px-4 py-4 md:px-6 md:py-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Estado del Patrimonio inmobiliario</h1>
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Estado del Patrimonio Inmobiliario</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {allUnits.length} {allUnits.length === 1 ? "unidad" : "unidades"} •{" "}
             {activeUnits.length} {activeUnits.length === 1 ? "arrendada" : "arrendadas"} •{" "}
@@ -544,7 +544,7 @@ function Dashboard() {
             </Button>
           ) : null}
         </div>
-        <div className="mt-1 text-xs text-muted-foreground">
+        <div className="mt-2 text-xs text-muted-foreground">
           {filteredRows.length} de {rows.length} unidades
         </div>
 
@@ -555,11 +555,11 @@ function Dashboard() {
         ) : rows.length === 0 ? (
           <EmptyState />
         ) : filteredRows.length === 0 ? (
-          <div className="mt-3 rounded-xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
+          <div className="mt-6 rounded-xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
             No hay unidades que coincidan con “{filter}”.
           </div>
         ) : (
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredRows.map((r) => (
               <PaymentRow
                 key={r.unit.id}

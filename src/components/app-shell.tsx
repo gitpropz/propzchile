@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/dashboard", label: "Panel", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/properties", label: "Propiedades", icon: Building },
   { to: "/contracts", label: "Contratos", icon: FileText },
   { to: "/rent/import", label: "Importar cartola", icon: FileUp },
@@ -79,7 +79,7 @@ function SidebarInner({
   return (
     <>
       <div className="px-5 py-6">
-        <PropzLogo wordmarkClassName="text-lg text-sidebar-foreground" />
+        <PropzLogo tone="inverse" wordmarkClassName="text-lg text-sidebar-foreground" />
       </div>
       <nav className="flex-1 space-y-0.5 px-3">
         {nav.map((item) => {
