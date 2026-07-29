@@ -67,11 +67,14 @@ export function PropzLogo({
   tagline?: boolean;
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
+    <span className={cn("inline-flex items-end gap-2", className)}>
       <PropzMark className={markClassName} tone={tone} />
       <span className="flex flex-col leading-none">
         <span
-          className={cn("font-display text-[1.25rem] font-bold tracking-[-0.03em]", wordmarkClassName)}
+          className={cn(
+            "font-display text-[1.75rem] font-bold leading-[0.85] tracking-[-0.03em]",
+            wordmarkClassName,
+          )}
         >
           Prop<span className="text-accent-brand">z</span>
         </span>
