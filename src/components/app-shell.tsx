@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             {open ? <X /> : <Menu />}
           </Button>
-          <PropzLogo markClassName="h-7 w-7" wordmarkClassName="text-base" />
+          <PropzLogo markClassName="h-7 w-7" wordmarkClassName="text-[1.5rem]" />
         </header>
         <main className="flex-1 overflow-x-hidden pb-[env(safe-area-inset-bottom)]">{children}</main>
       </div>
@@ -79,7 +79,7 @@ function SidebarInner({
   return (
     <>
       <div className="px-5 py-6">
-        <PropzLogo tone="inverse" wordmarkClassName="text-lg text-sidebar-foreground" />
+        <PropzLogo tone="inverse" wordmarkClassName="text-[1.75rem] text-sidebar-foreground" />
       </div>
       <nav className="flex-1 space-y-0.5 px-3">
         {nav.map((item) => {
