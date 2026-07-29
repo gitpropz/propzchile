@@ -170,7 +170,7 @@ function PropertyDetail() {
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="units">Unidades ({unitsQuery.data?.length ?? 0})</TabsTrigger>
-          <TabsTrigger value="bills">Cuentas</TabsTrigger>
+          <TabsTrigger value="bills">Servicios monitoreados</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="pt-4">
