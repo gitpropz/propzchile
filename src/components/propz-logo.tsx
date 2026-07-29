@@ -67,7 +67,7 @@ export function PropzLogo({
   tagline?: boolean;
 }) {
   return (
-    <span className={cn("inline-flex gap-2", tagline ? "items-center" : "items-end", className)}>
+    <span className={cn("inline-flex gap-1.5", tagline ? "items-center" : "items-end", className)}>
       <PropzMark className={markClassName} tone={tone} />
       <span className="flex flex-col leading-none">
         <span
