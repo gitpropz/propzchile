@@ -38,7 +38,7 @@ function AuthPage() {
     <div className="grid min-h-screen place-items-center bg-surface px-4 py-10">
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center text-foreground">
-          <PropzLogo wordmarkClassName="text-xl" markClassName="h-9 w-9" />
+          <PropzLogo wordmarkClassName="text-[2rem]" markClassName="h-9 w-9" />
         </Link>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">

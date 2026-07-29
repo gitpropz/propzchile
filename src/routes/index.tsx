@@ -57,7 +57,7 @@ function Index() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-6">
-          <PropzLogo wordmarkClassName="text-lg" />
+          <PropzLogo wordmarkClassName="text-[1.75rem]" />
           <div className="flex items-center gap-2">
             <Link to="/auth" className="hidden sm:block">
               <Button variant="ghost" size="sm">Iniciar sesión</Button>
@@ -133,7 +133,7 @@ function Index() {
 
       <footer className="border-t border-border bg-surface py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 text-center sm:px-6">
-          <PropzLogo markClassName="h-7 w-7" wordmarkClassName="text-base" tagline />
+          <PropzLogo markClassName="h-7 w-7" wordmarkClassName="text-[1.5rem]" tagline />
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Propz · Tecnología para inversionistas inmobiliarios
           </p>
