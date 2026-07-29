@@ -73,7 +73,7 @@ function Index() {
         <div className="grid gap-12 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-16">
           <div>
             <span className="eyebrow inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5">
-              Patrimonio inmobiliario inteligente
+              Todo tu patrimonio inmobiliario en un solo lugar
             </span>
             <h1 className="mt-6 text-[2.15rem] leading-[1.08] sm:text-5xl md:text-[3.4rem]">
               El centro de control de tu patrimonio inmobiliario.
@@ -121,8 +121,8 @@ function Index() {
         <div className="grid gap-4 md:grid-cols-3">
           {pillars.map(({ icon: Icon, title, body }) => (
             <div key={title} className="rounded-xl border border-border bg-card p-6">
-              <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary-soft">
-                <Icon className="h-5 w-5 text-primary" strokeWidth={1.75} />
+              <div className="grid h-10 w-10 place-items-center rounded-lg bg-accent-brand-soft">
+                <Icon className="h-5 w-5 text-accent-brand-foreground" strokeWidth={1.75} />
               </div>
               <h3 className="mt-4 text-base">{title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
@@ -133,7 +133,7 @@ function Index() {
 
       <footer className="border-t border-border bg-surface py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 text-center sm:px-6">
-          <PropzLogo markClassName="h-6 w-6" wordmarkClassName="text-sm" />
+          <PropzLogo markClassName="h-7 w-7" wordmarkClassName="text-base" tagline />
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Propz · Tecnología para inversionistas inmobiliarios
           </p>

@@ -1,54 +1,74 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Marca Propz.
+ * Marca Propz — según manual oficial.
  *
- * El isotipo es una "P" construida sobre una forma arquitectónica sólida:
- * una base de patrimonio con un núcleo abierto que representa la capa
- * tecnológica. Geometría estable, sin degradados ni efectos.
+ * Isotipo: torres inmobiliarias en azul principal (#102A43) que
+ * construyen una "P", atravesadas por una flecha de crecimiento
+ * en verde (#14C87B). Sin degradados ni efectos.
  */
 export function PropzMark({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      fill="none"
-      aria-hidden="true"
-      className={cn("h-8 w-8", className)}
-    >
-      <rect width="32" height="32" rx="9" className="fill-primary" />
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className={cn("h-8 w-8", className)}>
+      {/* Torres ascendentes */}
+      <path d="M3 18.5 9.5 14v28H3z" className="fill-primary" />
+      <path d="M12.5 13 19 8.5V42h-6.5z" className="fill-primary" />
+      {/* Cuerpo de la P */}
+      <path d="M22 8.5h6.5v33.5H22z" className="fill-primary" />
+      {/* Arco de la P */}
       <path
-        d="M11 23V9.6c0-.33.27-.6.6-.6h5.65c3.17 0 5.25 1.95 5.25 4.9s-2.08 4.95-5.25 4.95H14.4"
-        stroke="currentColor"
-        className="text-primary-foreground"
-        strokeWidth="2.4"
+        d="M28.5 11.5h2.8c5.9 0 10.2 3.6 10.2 9s-4.3 9-10.2 9h-2.8"
+        className="stroke-primary"
+        strokeWidth="6"
+        strokeLinecap="butt"
+      />
+      {/* Flecha de crecimiento */}
+      <path
+        d="M7 36.5 16.5 25.5l5.5 5.5L36.5 15"
+        className="stroke-accent-brand"
+        strokeWidth="4.2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="17.1" cy="13.95" r="1.85" className="fill-primary" />
+      <path
+        d="M29 14.5h8.5V23"
+        className="stroke-accent-brand"
+        strokeWidth="4.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-/** Logotipo completo: isotipo + wordmark. */
+
+/** Logotipo horizontal: isotipo + wordmark (Propz con la z en verde). */
 export function PropzLogo({
   className,
   wordmarkClassName,
   markClassName,
+  tagline = false,
 }: {
   className?: string;
   wordmarkClassName?: string;
   markClassName?: string;
+  /** Muestra el eslogan oficial bajo el wordmark. */
+  tagline?: boolean;
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <PropzMark className={markClassName} />
-      <span
-        className={cn(
-          "font-display text-[1.0625rem] font-bold tracking-[-0.03em]",
-          wordmarkClassName,
+      <span className="flex flex-col leading-none">
+        <span
+          className={cn("font-display text-[1.25rem] font-bold tracking-[-0.03em]", wordmarkClassName)}
+        >
+          Prop<span className="text-accent-brand">z</span>
+        </span>
+        {tagline && (
+          <span className="mt-1 text-[0.6875rem] leading-tight text-muted-foreground">
+            Todo tu patrimonio inmobiliario en un solo lugar
+          </span>
         )}
-      >
-        Propz
       </span>
     </span>
   );
