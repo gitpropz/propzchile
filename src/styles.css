@@ -73,7 +73,9 @@
   --color-info-soft: var(--info-soft);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
-  --color-border: var(--border);
+  --color-accent-brand: var(--accent-brand);
+  --color-accent-brand-foreground: var(--accent-brand-foreground);
+  --color-accent-brand-soft: var(--accent-brand-soft);
   --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
