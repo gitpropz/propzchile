@@ -167,6 +167,77 @@ export type Database = {
           },
         ]
       }
+      monitored_services: {
+        Row: {
+          active: boolean
+          alert_threshold_pct: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          expected_amount: number | null
+          id: string
+          last_alert_at: string | null
+          last_detected_amount: number | null
+          last_detected_at: string | null
+          last_detected_period: string | null
+          notes: string | null
+          organization_id: string
+          provider: string | null
+          service_identifier: string | null
+          service_type: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          alert_threshold_pct?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expected_amount?: number | null
+          id?: string
+          last_alert_at?: string | null
+          last_detected_amount?: number | null
+          last_detected_at?: string | null
+          last_detected_period?: string | null
+          notes?: string | null
+          organization_id: string
+          provider?: string | null
+          service_identifier?: string | null
+          service_type?: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          alert_threshold_pct?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expected_amount?: number | null
+          id?: string
+          last_alert_at?: string | null
+          last_detected_amount?: number | null
+          last_detected_at?: string | null
+          last_detected_period?: string | null
+          notes?: string | null
+          organization_id?: string
+          provider?: string | null
+          service_identifier?: string | null
+          service_type?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monitored_services_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "rentable_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string

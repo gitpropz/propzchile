@@ -25,6 +25,12 @@ import {
   type PaymentStatus,
   type RentPayment,
 } from "@/lib/rent-status";
+import {
+  SERVICE_ALERT_CLASS,
+  evaluateServiceAmount,
+  serviceTypeLabel,
+  type MonitoredService,
+} from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
@@ -154,6 +160,20 @@ function Dashboard() {
         .eq("organization_id", orgId!)
         .eq("status", "pendiente")
         .order("due_date", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  const servicesQuery = useQuery({
+    queryKey: ["dash-monitored-services", orgId],
+    queryFn: async (): Promise<MonitoredService[]> => {
+      const { data, error } = await supabase
+        .from("monitored_services")
+        .select("*")
+        .eq("organization_id", orgId!)
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
@@ -518,7 +538,12 @@ function Dashboard() {
         <TrendChart data={trend} />
       </section>
 
-      {/* Bills */}
+      {/* Servicios monitoreados */}
+      <ServicesMonitorSection
+        services={servicesQuery.data ?? []}
+        unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))}
+      />
+
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
 
       {/* Rows */}
@@ -836,18 +861,112 @@ function billStatus(b: Bill): { label: string; className: string; overdue: numbe
   return { label: `Atrasado ${overdue}d`, className: "bg-destructive/15 text-destructive border-destructive/30", overdue };
 }
 
-function BillsSection({ bills, unitsById }: { bills: Bill[]; unitsById: Map<string, Unit & { properties: Property | null }> }) {
-  const sorted = [...bills].sort((a, b) => a.due_date.localeCompare(b.due_date));
-  const overdue = sorted.filter((b) => daysSinceDue(b.due_date) > 0);
-  const total = sorted.reduce((sum, b) => sum + Number(b.amount ?? 0), 0);
+function ServicesMonitorSection({
+  services,
+  unitsById,
+}: {
+  services: MonitoredService[];
+  unitsById: Map<string, Unit & { properties: Property | null }>;
+}) {
+  const active = services.filter((s) => s.active);
+  const evaluated = active.map((s) => ({
+    service: s,
+    ev: evaluateServiceAmount(s, s.last_detected_amount == null ? null : Number(s.last_detected_amount)),
+  }));
+  const alerts = evaluated.filter((e) => e.ev.level === "alert" || e.ev.level === "warning");
+  const expectedTotal = active.reduce((sum, s) => sum + Number(s.expected_amount ?? 0), 0);
 
   return (
     <section className="mt-8 rounded-2xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold">Cuentas de servicios pendientes</h2>
+          <h2 className="text-sm font-semibold">Monitoreo de servicios</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Semáforo con la misma lógica que los arriendos: verde al día, amarillo 1–5 días, rojo +5 días.
+            Servicios configurados por unidad. Cuando cargues un resumen de Servipag, Propz los identificará por
+            su número de cliente y avisará si el monto supera el umbral definido.
+          </p>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {active.length} activos · {alerts.length} con alerta · Esperado {formatCLP(expectedTotal)}
+        </div>
+      </div>
+
+      {active.length === 0 ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+          <span>Aún no configuras servicios monitoreados.</span>
+          <Link to="/properties" className="text-sm text-foreground hover:underline">
+            Configurar servicios →
+          </Link>
+        </div>
+      ) : (
+        <ul className="mt-4 divide-y divide-border">
+          {evaluated
+            .slice()
+            .sort((a, b) => rankAlert(b.ev.level) - rankAlert(a.ev.level))
+            .slice(0, 12)
+            .map(({ service: s, ev }) => {
+              const u = unitsById.get(s.unit_id);
+              return (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium">
+                      {u?.properties?.name ?? "Propiedad"} · {u?.label ?? "Unidad"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {serviceTypeLabel(s.service_type)}
+                      {s.service_identifier ? ` · N° ${s.service_identifier}` : ""}
+                      {s.last_detected_period ? ` · ${s.last_detected_period}` : ""}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-sm font-semibold tabular-nums">
+                        {s.last_detected_amount != null
+                          ? formatCLP(Number(s.last_detected_amount))
+                          : s.expected_amount != null
+                            ? formatCLP(Number(s.expected_amount))
+                            : "—"}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {s.last_detected_amount != null ? "Último detectado" : "Valor esperado"}
+                        {ev.variationPct != null
+                          ? ` · ${ev.variationPct >= 0 ? "+" : ""}${ev.variationPct.toFixed(0)}%`
+                          : ""}
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${SERVICE_ALERT_CLASS[ev.level]}`}
+                    >
+                      {ev.level === "unknown" ? "En espera de Servipag" : ev.label}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function rankAlert(level: string): number {
+  return level === "alert" ? 3 : level === "warning" ? 2 : level === "ok" ? 1 : 0;
+}
+
+function BillsSection({ bills, unitsById }: { bills: Bill[]; unitsById: Map<string, Unit & { properties: Property | null }> }) {
+  const sorted = [...bills].sort((a, b) => a.due_date.localeCompare(b.due_date));
+  const overdue = sorted.filter((b) => daysSinceDue(b.due_date) > 0);
+  const total = sorted.reduce((sum, b) => sum + Number(b.amount ?? 0), 0);
+
+  if (sorted.length === 0) return null;
+
+  return (
+    <section className="mt-8 rounded-2xl border border-border bg-card p-5">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-sm font-semibold">Cuentas registradas anteriormente</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Historial de cuentas cargadas manualmente. Semáforo: verde al día, amarillo 1–5 días, rojo +5 días.
           </p>
         </div>
         <div className="text-sm text-muted-foreground">

@@ -10,21 +10,19 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 import { supabase } from "@/integrations/supabase/client";
+import { MonitoredServicesPanel } from "@/components/monitored-services-panel";
 import { UNIT_TYPE_LABELS, UNIT_TYPE_OPTIONS, CURRENCY_OPTIONS, type UnitType, type Currency } from "@/lib/property-types";
 import { formatMoney } from "@/lib/format";
-import { daysSinceDue } from "@/lib/rent-status";
 import type { Database } from "@/integrations/supabase/types";
 
 type Property = Database["public"]["Tables"]["properties"]["Row"];
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
-type Bill = Database["public"]["Tables"]["unit_bills"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
   head: () => ({ meta: [{ title: "Propiedad — Propz" }] }),
@@ -170,7 +168,7 @@ function PropertyDetail() {
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="units">Unidades ({unitsQuery.data?.length ?? 0})</TabsTrigger>
-          <TabsTrigger value="bills">Cuentas</TabsTrigger>
+          <TabsTrigger value="bills">Servicios monitoreados</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="pt-4">
@@ -191,7 +189,7 @@ function PropertyDetail() {
         </TabsContent>
 
         <TabsContent value="bills" className="pt-4">
-          <BillsTab organizationId={p.organization_id} units={unitsQuery.data ?? []} />
+          <MonitoredServicesPanel organizationId={p.organization_id} units={unitsQuery.data ?? []} />
         </TabsContent>
       </Tabs>
     </div>
@@ -638,248 +636,6 @@ function UnitsTab({
       ) : (
         <Button variant="outline" onClick={openAddForm}>
           <Plus className="mr-2 h-4 w-4" /> Agregar unidad
-        </Button>
-      )}
-    </div>
-  );
-}
-const BILL_CATEGORIES: { value: Bill["category"]; label: string }[] = [
-  { value: "gastos_comunes", label: "Gastos comunes" },
-  { value: "agua", label: "Agua" },
-  { value: "luz", label: "Luz" },
-  { value: "gas", label: "Gas" },
-  { value: "internet", label: "Internet" },
-  { value: "otro", label: "Otro" },
-];
-
-function billStatusMeta(b: Bill): { label: string; className: string } {
-  if (b.status === "pagado") {
-    return { label: "Pagado", className: "bg-success/15 text-success border-success/30" };
-  }
-  const overdue = daysSinceDue(b.due_date);
-  if (overdue < 0) return { label: "Por vencer", className: "bg-muted text-muted-foreground border-border" };
-  if (overdue <= 5) return { label: `Atrasado ${overdue === 0 ? "hoy" : `${overdue}d`}`, className: "bg-warning/15 text-warning border-warning/30" };
-  return { label: `Atrasado ${overdue}d`, className: "bg-destructive/15 text-destructive border-destructive/30" };
-}
-
-function BillsTab({ organizationId, units }: { organizationId: string; units: Unit[] }) {
-  const [adding, setAdding] = useState(false);
-  const [showMore, setShowMore] = useState(false);
-  const [unitId, setUnitId] = useState<string>(units[0]?.id ?? "");
-  const [category, setCategory] = useState<Bill["category"]>("gastos_comunes");
-  const [period, setPeriod] = useState("");
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState<Currency>("CLP");
-  const [dueDate, setDueDate] = useState("");
-  const [provider, setProvider] = useState("");
-  const [notes, setNotes] = useState("");
-
-  const unitIds = units.map((u) => u.id);
-  const billsQuery = useQuery({
-    queryKey: ["bills", organizationId, unitIds.join(",")],
-    queryFn: async (): Promise<Bill[]> => {
-      if (unitIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("unit_bills")
-        .select("*")
-        .in("unit_id", unitIds)
-        .order("due_date", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: unitIds.length > 0,
-  });
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!unitId || !amount || !dueDate) {
-      toast.error("Completa unidad, monto y vencimiento");
-      return;
-    }
-    const { data: userData } = await supabase.auth.getUser();
-    const { error } = await supabase.from("unit_bills").insert({
-      organization_id: organizationId,
-      unit_id: unitId,
-      category,
-      period: period || null,
-      amount: Number(amount),
-      currency,
-      due_date: dueDate,
-      provider: provider || null,
-      notes: notes || null,
-      source: "manual",
-      created_by: userData.user?.id ?? null,
-    });
-    if (error) {
-      toast.error("No pudimos guardar la cuenta", { description: error.message });
-      return;
-    }
-    toast.success("Cuenta registrada");
-    setAdding(false);
-    setAmount(""); setPeriod(""); setDueDate(""); setProvider(""); setNotes("");
-    billsQuery.refetch();
-  }
-
-  async function toggleStatus(b: Bill) {
-    const nextStatus: Bill["status"] = b.status === "pagado" ? "pendiente" : "pagado";
-    const { data: userData } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("unit_bills")
-      .update({
-        status: nextStatus,
-        paid_at: nextStatus === "pagado" ? new Date().toISOString() : null,
-        paid_by: nextStatus === "pagado" ? userData.user?.id ?? null : null,
-      })
-      .eq("id", b.id);
-    if (error) {
-      toast.error("No pudimos actualizar", { description: error.message });
-      return;
-    }
-    billsQuery.refetch();
-  }
-
-  async function remove(id: string) {
-    const { error } = await supabase.from("unit_bills").delete().eq("id", id);
-    if (error) {
-      toast.error("No pudimos eliminar", { description: error.message });
-      return;
-    }
-    billsQuery.refetch();
-  }
-
-  const bills = billsQuery.data ?? [];
-  const unitById = new Map(units.map((u) => [u.id, u]));
-
-  if (units.length === 0) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
-        Primero agrega unidades para poder cargar cuentas.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-xs text-muted-foreground">
-        Registra manualmente las cuentas de gastos comunes, agua, luz, gas e internet. Si prefieres, reenvía las
-        facturas al correo <span className="font-medium text-foreground">cuentas@tucartera.app</span> y aparecerán
-        aquí (buzón en preparación).
-      </div>
-
-      <div className="rounded-xl border border-border bg-card">
-        {bills.length === 0 ? (
-          <div className="p-6 text-center text-sm text-muted-foreground">
-            Aún no hay cuentas registradas.
-          </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {bills.map((b) => {
-              const u = unitById.get(b.unit_id);
-              const meta = billStatusMeta(b);
-              const catLabel = BILL_CATEGORIES.find((c) => c.value === b.category)?.label ?? b.category;
-              return (
-                <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-                  <div className="min-w-0">
-                    <div className="font-medium">
-                      {catLabel}
-                      {b.period ? <span className="text-muted-foreground"> · {b.period}</span> : null}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {u ? u.label : "Unidad"} · Vence {b.due_date}
-                      {b.provider ? ` · ${b.provider}` : ""}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-sm font-semibold">{formatMoney(Number(b.amount), b.currency)}</div>
-                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${meta.className}`}>
-                      {meta.label}
-                    </span>
-                    <Button variant="ghost" size="sm" onClick={() => toggleStatus(b)}>
-                      {b.status === "pagado" ? "Reabrir" : "Marcar pagada"}
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(b.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      {adding ? (
-        <form onSubmit={submit} className="rounded-xl border border-border bg-card p-4">
-          <div className="grid gap-2 md:grid-cols-12">
-            <div className="md:col-span-4 space-y-1">
-              <Label className="text-xs">Unidad</Label>
-              <Select value={unitId} onValueChange={setUnitId}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {units.map((u) => <SelectItem key={u.id} value={u.id}>{u.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-3 space-y-1">
-              <Label className="text-xs">Tipo</Label>
-              <Select value={category} onValueChange={(v) => setCategory(v as Bill["category"])}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {BILL_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-3 space-y-1">
-              <Label className="text-xs">Monto</Label>
-              <Input className="h-9" type="number" required value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
-            </div>
-            <div className="md:col-span-2 space-y-1">
-              <Label className="text-xs">Vence</Label>
-              <Input className="h-9" type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-            </div>
-          </div>
-          {showMore ? (
-            <div className="mt-2 grid gap-2 md:grid-cols-12">
-              <div className="md:col-span-2 space-y-1">
-                <Label className="text-xs">Moneda</Label>
-                <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CURRENCY_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="md:col-span-4 space-y-1">
-                <Label className="text-xs">Período</Label>
-                <Input className="h-9" value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="Ej: Enero 2026" />
-              </div>
-              <div className="md:col-span-6 space-y-1">
-                <Label className="text-xs">Proveedor</Label>
-                <Input className="h-9" value={provider} onChange={(e) => setProvider(e.target.value)} placeholder="Aguas Andinas, Enel…" />
-              </div>
-              <div className="md:col-span-12 space-y-1">
-                <Label className="text-xs">Notas</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-              </div>
-            </div>
-          ) : null}
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setShowMore((v) => !v)}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              {showMore ? "Menos opciones" : "Más opciones (moneda, período, proveedor, notas)"}
-            </button>
-            <div className="flex gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>Cancelar</Button>
-              <Button type="submit" size="sm">Guardar</Button>
-            </div>
-          </div>
-        </form>
-      ) : (
-        <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Agregar cuenta
         </Button>
       )}
     </div>
