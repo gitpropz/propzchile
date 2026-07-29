@@ -280,7 +280,7 @@ function Dashboard() {
   }, [activeUnits, paymentsByKey, year, month]);
 
   const collectedPct = totals.expected > 0
-    ? Math.min(100, Math.round((totals.confirmed / totals.expected) * 100))
+    ? Math.round((totals.confirmed / totals.expected) * 100)
     : 0;
 
   const prev = trend.length >= 2 ? trend[trend.length - 2] : null;
