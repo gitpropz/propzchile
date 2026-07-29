@@ -160,6 +160,20 @@ function Dashboard() {
     enabled: !!orgId,
   });
 
+  const servicesQuery = useQuery({
+    queryKey: ["dash-monitored-services", orgId],
+    queryFn: async (): Promise<MonitoredService[]> => {
+      const { data, error } = await supabase
+        .from("monitored_services")
+        .select("*")
+        .eq("organization_id", orgId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
   // Include all units with a base rent — unrented ones show as "PENDIENTE".
   const allUnits = useMemo(
     () =>
