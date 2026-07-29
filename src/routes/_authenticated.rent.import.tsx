@@ -55,7 +55,7 @@ type StatementDraft = {
 
 export const Route = createFileRoute("/_authenticated/rent/import")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Importar cartola bancaria — Cartera" }] }),
+  head: () => ({ meta: [{ title: "Importar cartola bancaria — Propz" }] }),
   component: ImportPage,
 });
 

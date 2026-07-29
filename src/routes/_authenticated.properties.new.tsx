@@ -13,7 +13,7 @@ import { useCurrentOrg } from "@/hooks/use-current-org";
 import { UNIT_TYPE_OPTIONS, CURRENCY_OPTIONS, type UnitType, type Currency } from "@/lib/property-types";
 
 export const Route = createFileRoute("/_authenticated/properties/new")({
-  head: () => ({ meta: [{ title: "Nueva propiedad — Cartera" }] }),
+  head: () => ({ meta: [{ title: "Nueva propiedad — Propz" }] }),
   component: NewProperty,
 });
 

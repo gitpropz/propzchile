@@ -50,6 +50,6 @@ export async function ensureAccountSetup(): Promise<void> {
 
   if (membership) return;
 
-  const orgName = (meta.organization_name as string) || "Mi Cartera";
+  const orgName = (meta.organization_name as string) || "Mi patrimonio";
   await supabase.rpc("create_org_for_current_user", { _name: orgName });
 }

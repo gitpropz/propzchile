@@ -1,69 +1,115 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { Building2, Sparkles, ShieldCheck, LineChart } from "lucide-react";
+import { ShieldCheck, LineChart, Zap, ArrowRight } from "lucide-react";
+
+import { PropzLogo } from "@/components/propz-logo";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Propz — El centro de control de tu patrimonio inmobiliario" },
+      {
+        name: "description",
+        content:
+          "Propz es la plataforma inteligente para inversionistas inmobiliarios: controla, automatiza y haz crecer tu patrimonio desde un solo lugar.",
+      },
+      { property: "og:title", content: "Propz — El centro de control de tu patrimonio inmobiliario" },
+      {
+        property: "og:description",
+        content:
+          "Controla, automatiza y haz crecer tu patrimonio inmobiliario con una plataforma diseñada para inversionistas.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
+
+const signals = [
+  { tone: "bg-destructive", label: "3 arriendos vencidos", meta: "Requiere acción" },
+  { tone: "bg-warning", label: "2 contratos por vencer", meta: "Próximos 30 días" },
+  { tone: "bg-info", label: "1 cotización por autorizar", meta: "En espera" },
+  { tone: "bg-success", label: "12 propiedades al día", meta: "Sin novedades" },
+];
+
+const pillars = [
+  {
+    icon: ShieldCheck,
+    title: "Control total",
+    body: "Cada peso pasa por tu autorización. Trazabilidad completa de ingresos, gastos y decisiones.",
+  },
+  {
+    icon: Zap,
+    title: "Automatización",
+    body: "Conciliación de arriendos, alertas y vencimientos en piloto automático. Solo intervienes cuando importa.",
+  },
+  {
+    icon: LineChart,
+    title: "Patrimonio medible",
+    body: "Cada propiedad es una unidad económica con rentabilidad, flujo y desempeño consolidado.",
+  },
+];
 
 function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-6">
+          <PropzLogo wordmarkClassName="text-lg" />
           <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">Cartera</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to="/auth">
-              <Button variant="ghost">Iniciar sesión</Button>
+            <Link to="/auth" className="hidden sm:block">
+              <Button variant="ghost" size="sm">Iniciar sesión</Button>
             </Link>
             <Link to="/auth" hash="signup">
-              <Button>Crear cuenta</Button>
+              <Button size="sm">Crear cuenta</Button>
             </Link>
           </div>
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-        <div className="grid gap-12 md:grid-cols-2 md:items-center">
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-6 md:py-24">
+        <div className="grid gap-12 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-16">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-              <Sparkles className="h-3.5 w-3.5" /> Administrador inteligente
+            <span className="eyebrow inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5">
+              Patrimonio inmobiliario inteligente
             </span>
-            <h1 className="mt-6 text-4xl font-semibold tracking-tight md:text-5xl">
-              Administra tus propiedades sin perder el control.
+            <h1 className="mt-6 text-[2.15rem] leading-[1.08] sm:text-5xl md:text-[3.4rem]">
+              El centro de control de tu patrimonio inmobiliario.
             </h1>
-            <p className="mt-4 max-w-lg text-lg text-muted-foreground">
-              Cartera automatiza cobros, obligaciones y mantenciones. Tú decides lo importante;
-              el sistema se encarga del resto y solo te avisa cuando realmente necesitas actuar.
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Propz reúne tus propiedades, contratos y flujos en una sola plataforma. Automatiza lo
+              repetitivo y te avisa solo cuando una decisión tuya es realmente necesaria.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/auth" hash="signup">
-                <Button size="lg">Comenzar gratis</Button>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link to="/auth" hash="signup" className="sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto">
+                  Comenzar gratis <ArrowRight />
+                </Button>
               </Link>
-              <Link to="/auth">
-                <Button size="lg" variant="outline">Ya tengo cuenta</Button>
+              <Link to="/auth" className="sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                  Ya tengo cuenta
+                </Button>
               </Link>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="text-sm font-medium text-muted-foreground">Hoy requiere tu atención</div>
-            <ul className="mt-4 space-y-3">
-              {[
-                { color: "bg-destructive", label: "3 arriendos vencidos" },
-                { color: "bg-warning", label: "2 contratos por vencer" },
-                { color: "bg-info", label: "1 cotización esperando autorización" },
-                { color: "bg-success", label: "12 propiedades al día" },
-              ].map((item) => (
-                <li key={item.label} className="flex items-center gap-3 rounded-lg border border-border bg-background/60 px-3 py-2.5">
-                  <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
-                  <span className="text-sm">{item.label}</span>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+            <div className="flex items-center justify-between">
+              <span className="eyebrow">Hoy requiere tu atención</span>
+              <span className="text-xs text-muted-foreground tabular">4 señales</span>
+            </div>
+            <ul className="mt-4 space-y-2">
+              {signals.map((item) => (
+                <li
+                  key={item.label}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3.5 py-3 transition-propz hover:border-border-strong"
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${item.tone}`} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.label}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{item.meta}</span>
                 </li>
               ))}
             </ul>
@@ -71,24 +117,27 @@ function Index() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 pb-24">
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            { icon: ShieldCheck, title: "Autorizas los gastos", body: "Ninguna cotización sale a la calle sin tu OK. Trazabilidad total en cada paso." },
-            { icon: Sparkles, title: "Trabaja por excepción", body: "Si todo está bien, no te molestamos. Solo verás lo que requiere tu decisión." },
-            { icon: LineChart, title: "Rentabilidad clara", body: "Cada propiedad es una unidad económica: ingresos, gastos y flujo consolidados." },
-          ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-xl border border-border bg-card p-5">
-              <Icon className="h-5 w-5 text-brand" />
-              <h3 className="mt-3 font-semibold">{title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{body}</p>
+      <section className="mx-auto max-w-6xl px-5 pb-24 sm:px-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          {pillars.map(({ icon: Icon, title, body }) => (
+            <div key={title} className="rounded-xl border border-border bg-card p-6">
+              <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary-soft">
+                <Icon className="h-5 w-5 text-primary" strokeWidth={1.75} />
+              </div>
+              <h3 className="mt-4 text-base">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Cartera · Diseñado para propietarios de Chile
+      <footer className="border-t border-border bg-surface py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 text-center sm:px-6">
+          <PropzLogo markClassName="h-6 w-6" wordmarkClassName="text-sm" />
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Propz · Tecnología para inversionistas inmobiliarios
+          </p>
+        </div>
       </footer>
     </div>
   );

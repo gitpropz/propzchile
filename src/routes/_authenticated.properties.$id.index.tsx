@@ -27,7 +27,7 @@ type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Bill = Database["public"]["Tables"]["unit_bills"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
-  head: () => ({ meta: [{ title: "Propiedad — Cartera" }] }),
+  head: () => ({ meta: [{ title: "Propiedad — Propz" }] }),
   component: PropertyDetail,
 });
 
