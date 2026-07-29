@@ -17,14 +17,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { supabase } from "@/integrations/supabase/client";
+import { MonitoredServicesPanel } from "@/components/monitored-services-panel";
 import { UNIT_TYPE_LABELS, UNIT_TYPE_OPTIONS, CURRENCY_OPTIONS, type UnitType, type Currency } from "@/lib/property-types";
 import { formatMoney } from "@/lib/format";
-import { daysSinceDue } from "@/lib/rent-status";
 import type { Database } from "@/integrations/supabase/types";
 
 type Property = Database["public"]["Tables"]["properties"]["Row"];
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
-type Bill = Database["public"]["Tables"]["unit_bills"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
   head: () => ({ meta: [{ title: "Propiedad — Propz" }] }),
