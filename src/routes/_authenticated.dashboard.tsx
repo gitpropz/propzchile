@@ -25,6 +25,12 @@ import {
   type PaymentStatus,
   type RentPayment,
 } from "@/lib/rent-status";
+import {
+  SERVICE_ALERT_CLASS,
+  evaluateServiceAmount,
+  serviceTypeLabel,
+  type MonitoredService,
+} from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
@@ -532,7 +538,12 @@ function Dashboard() {
         <TrendChart data={trend} />
       </section>
 
-      {/* Bills */}
+      {/* Servicios monitoreados */}
+      <ServicesMonitorSection
+        services={servicesQuery.data ?? []}
+        unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))}
+      />
+
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
 
       {/* Rows */}
