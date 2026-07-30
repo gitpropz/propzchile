@@ -76,6 +76,38 @@ function ContractsIndex() {
         </Link>
       </div>
 
+      {expired > 0 && (
+        <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+          <div className="flex items-start gap-3">
+            <CalendarX className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {expired === 1 ? "1 contrato vencido" : `${expired} contratos vencidos`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Renueva o marca la unidad como vacante según corresponda.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {expiringSoon > 0 && (
+        <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-4">
+          <div className="flex items-start gap-3">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {expiringSoon === 1 ? "1 contrato" : `${expiringSoon} contratos`} vencen en los próximos {EXPIRY_WARNING_DAYS} días
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Anticípate a la renovación para evitar vacantes.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {withMissingTenant.length > 0 && (
         <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-4">
           <div className="flex items-start gap-3">
