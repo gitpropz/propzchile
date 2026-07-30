@@ -548,8 +548,13 @@ function UnitsTab({
                       {u.tenant_name ? ` · ${u.tenant_name}` : ""}
                     </div>
                     {u.rent_active ? (
-                      <div className="mt-1 inline-flex items-center rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[11px] text-success">
-                        Arrendada
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[11px] text-success">
+                          Arrendada
+                        </span>
+                        {u.rent_end_date ? (
+                          <UnitExpiryBadge rentEndDate={u.rent_end_date} />
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
