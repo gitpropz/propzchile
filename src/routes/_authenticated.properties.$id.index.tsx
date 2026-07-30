@@ -251,6 +251,7 @@ function UnitsTab({
     tenant_account_numbers: string;
     rent_active: boolean;
     rent_start_date: string;
+    rent_end_date: string;
   } | null>(null);
 
   function startEdit(u: Unit) {
