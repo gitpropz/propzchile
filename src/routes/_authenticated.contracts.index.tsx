@@ -144,7 +144,7 @@ function ContractsIndex() {
       {units.length > 0 && (
         <div className="mt-8 rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold">Resumen — {currentMonthLabel}</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="mt-4 grid gap-4 sm:grid-cols-4">
             <div>
               <div className="text-xs text-muted-foreground">Contratos activos</div>
               <div className="text-lg font-semibold tabular-nums">{units.length}</div>
@@ -159,8 +159,12 @@ function ContractsIndex() {
               </div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Datos incompletos</div>
-              <div className="text-lg font-semibold tabular-nums">{withMissingTenant.length}</div>
+              <div className="text-xs text-muted-foreground">Por vencer</div>
+              <div className="text-lg font-semibold tabular-nums text-warning">{expiringSoon}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Vencidos</div>
+              <div className="text-lg font-semibold tabular-nums text-destructive">{expired}</div>
             </div>
           </div>
         </div>
