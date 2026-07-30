@@ -195,6 +195,17 @@ function Dashboard() {
   const activeUnits = useMemo(() => allUnits.filter((u) => u.rent_active), [allUnits]);
   const unrentedUnits = useMemo(() => allUnits.filter((u) => !u.rent_active), [allUnits]);
 
+  // Contratos próximos a vencer o ya vencidos (sobre unidades arrendadas).
+  const expiringContracts = useMemo(
+    () =>
+      activeUnits
+        .map((u) => ({ unit: u, lease: evaluateLease(true, (u as any).rent_end_date) }))
+        .filter((c) => c.lease.status === "expiring" || c.lease.status === "expired"),
+    [activeUnits],
+  );
+  const expiredCount = expiringContracts.filter((c) => c.lease.status === "expired").length;
+  const expiringSoonCount = expiringContracts.length - expiredCount;
+
   const paymentsByKey = useMemo(() => {
     const map = new Map<string, RentPayment>();
     for (const p of paymentsQuery.data ?? []) {
