@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCLP } from "@/lib/format";
-import { PropertyServicesStatus } from "@/components/property-services-status";
 import {
   PROVIDER_SUGGESTIONS,
   SERVICE_IDENTIFIER_HINT,
@@ -150,12 +149,6 @@ export function MonitoredServicesPanel({
 
   return (
     <div className="space-y-6">
-      <PropertyServicesStatus
-        organizationId={organizationId}
-        propertyId={propertyId}
-        services={services}
-      />
-
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-semibold">Configuración de servicios</h3>

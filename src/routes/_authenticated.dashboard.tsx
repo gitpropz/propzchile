@@ -25,19 +25,10 @@ import {
   type PaymentStatus,
   type RentPayment,
 } from "@/lib/rent-status";
-import {
-  SERVICE_STATUS_META,
-  computeCoverage,
-  evaluateProperty,
-  formatMonthsDue,
-  periodKey,
-  periodLabelEs,
-  readingsByService,
-  serviceTypeLabel,
-  type MonitoredService,
-  type ServiceReading,
-  type ServiceStatus,
-} from "@/lib/monitored-services";
+import { useServicesMonitor } from "@/hooks/use-services-monitor";
+import { ServicesSummaryStrip } from "@/components/services-summary-strip";
+import { UnitServicesIndicator } from "@/components/unit-services-indicator";
+import type { PropertyMonitoring } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 import { evaluateLease, EXPIRY_WARNING_DAYS } from "@/lib/lease-expiry";
 
@@ -193,6 +184,20 @@ function Dashboard() {
     [unitsQuery.data],
   );
   const activeUnits = useMemo(() => allUnits.filter((u) => u.rent_active), [allUnits]);
+
+  // Monitoreo de servicios (misma lógica, nueva presentación).
+  const servicesMonitor = useServicesMonitor(orgId);
+
+  /** Unidad principal (depto/casa) de cada propiedad: ahí vive el indicador de servicios. */
+  const mainUnitIdByProperty = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const u of allUnits) {
+      const pid = u.properties?.id;
+      if (!pid || map.has(pid)) continue;
+      if (u.unit_type === "apartment" || u.unit_type === "house") map.set(pid, u.id);
+    }
+    return map;
+  }, [allUnits]);
   const unrentedUnits = useMemo(() => allUnits.filter((u) => !u.rent_active), [allUnits]);
 
   // Contratos próximos a vencer o ya vencidos (sobre unidades arrendadas).
@@ -567,8 +572,12 @@ function Dashboard() {
         <TrendChart data={trend} />
       </section>
 
-      {/* Servicios monitoreados */}
-      <ServicesMonitorSection orgId={orgId} />
+      {/* Resumen ejecutivo de servicios */}
+      <ServicesSummaryStrip
+        period={servicesMonitor.period}
+        counts={servicesMonitor.counts}
+        coverage={servicesMonitor.coverage}
+      />
 
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
 
@@ -625,6 +634,14 @@ function Dashboard() {
                 onUndo={r.payment ? () => undoConfirm(r.payment!.id) : undefined}
                 onEditAmount={() => editExpectedAmount(r.unit, r.payment)}
                 onClearReview={r.payment ? () => clearReview(r.payment!.id) : undefined}
+                orgId={orgId}
+                servicesPeriod={servicesMonitor.period}
+                monitoring={
+                  r.unit.properties && mainUnitIdByProperty.get(r.unit.properties.id) === r.unit.id
+                    ? servicesMonitor.byProperty.get(r.unit.properties.id) ?? null
+                    : null
+                }
+                onServicesSaved={() => void servicesMonitor.refetch()}
               />
             ))}
           </div>
@@ -719,6 +736,10 @@ function PaymentRow({
   onUndo,
   onEditAmount,
   onClearReview,
+  orgId,
+  servicesPeriod,
+  monitoring,
+  onServicesSaved,
 }: {
   unit: Unit;
   property: Property | null;
@@ -731,6 +752,10 @@ function PaymentRow({
   onUndo?: () => void;
   onEditAmount: () => void;
   onClearReview?: () => void;
+  orgId?: string;
+  servicesPeriod: string;
+  monitoring: PropertyMonitoring | null;
+  onServicesSaved: () => void;
 }) {
   const needsReview = !!(payment as any)?.needs_review;
   const total = payment?.amount != null ? Number(payment.amount) : Number(unit.base_rent_amount ?? 0);
@@ -777,6 +802,16 @@ function PaymentRow({
           style={{ width: `${progress}%` }}
         />
       </div>
+
+      {/* Servicios de la propiedad (solo unidad principal) */}
+      {monitoring && orgId ? (
+        <UnitServicesIndicator
+          organizationId={orgId}
+          monitoring={monitoring}
+          period={servicesPeriod}
+          onSaved={onServicesSaved}
+        />
+      ) : null}
 
       {/* Fila 3: Acciones */}
       <div className="flex items-center justify-between gap-1">
@@ -885,183 +920,6 @@ function billStatus(b: Bill): { label: string; className: string; overdue: numbe
   if (overdue < 0) return { label: "Por vencer", className: "bg-muted text-muted-foreground border-border", overdue };
   if (overdue <= 5) return { label: `Atrasado ${overdue === 0 ? "hoy" : `${overdue}d`}`, className: "bg-warning/15 text-warning border-warning/30", overdue };
   return { label: `Atrasado ${overdue}d`, className: "bg-destructive/15 text-destructive border-destructive/30", overdue };
-}
-
-function ServicesMonitorSection({ orgId }: { orgId?: string }) {
-  const period = periodKey();
-  const [filterStatus, setFilterStatus] = useState<ServiceStatus | null>(null);
-
-  const servicesQuery = useQuery({
-    queryKey: ["dash-monitored-services", orgId],
-    queryFn: async (): Promise<MonitoredService[]> => {
-      const { data, error } = await supabase
-        .from("monitored_services")
-        .select("*")
-        .eq("organization_id", orgId!)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!orgId,
-  });
-
-  const readingsQuery = useQuery({
-    queryKey: ["dash-service-readings", orgId, period],
-    queryFn: async (): Promise<ServiceReading[]> => {
-      const { data, error } = await supabase
-        .from("service_readings")
-        .select("*")
-        .eq("organization_id", orgId!)
-        .eq("period", period);
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!orgId,
-  });
-
-  const propertiesQuery = useQuery({
-    queryKey: ["dash-properties", orgId],
-    queryFn: async (): Promise<Property[]> => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("id,name,address,comuna")
-        .eq("organization_id", orgId!)
-        .order("name");
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!orgId,
-  });
-
-  const services = servicesQuery.data ?? [];
-  const index = readingsByService(readingsQuery.data ?? [], period);
-  const coverage = computeCoverage(services, index);
-
-  const propertyIds = Array.from(
-    new Set(services.filter((s) => s.active && s.property_id).map((s) => s.property_id as string)),
-  );
-  const monitored = propertyIds.map((pid) => evaluateProperty(pid, services, index));
-  const propertyById = new Map((propertiesQuery.data ?? []).map((p) => [p.id, p]));
-
-  const counts: Record<ServiceStatus, number> = {
-    normal: monitored.filter((m) => m.status === "normal").length,
-    over: monitored.filter((m) => m.status === "over").length,
-    critical: monitored.filter((m) => m.status === "critical").length,
-    unknown: monitored.filter((m) => m.status === "unknown").length,
-  };
-
-  const visible = (filterStatus ? monitored.filter((m) => m.status === filterStatus) : monitored)
-    .slice()
-    .sort((a, b) => SERVICE_STATUS_META[b.status].rank - SERVICE_STATUS_META[a.status].rank);
-
-  return (
-    <section className="mt-8 rounded-2xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h2 className="text-sm font-semibold">Monitoreo de servicios</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {periodLabelEs(period)} · estado por propiedad según los meses de deuda de sus servicios.
-          </p>
-        </div>
-        <Link to="/services/update">
-          <Button variant="outline" size="sm">
-            <FileUp className="mr-2 h-4 w-4" /> Actualizar servicios
-          </Button>
-        </Link>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-        {(["normal", "over", "critical", "unknown"] as ServiceStatus[]).map((st) => {
-          const meta = SERVICE_STATUS_META[st];
-          const activeFilter = filterStatus === st;
-          return (
-            <button
-              key={st}
-              type="button"
-              onClick={() => setFilterStatus(activeFilter ? null : st)}
-              className={cn(
-                "rounded-xl border px-3 py-3 text-left transition-propz",
-                activeFilter ? "border-foreground/30 bg-muted/40" : "border-border bg-background hover:bg-muted/30",
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                <span className="text-xs text-muted-foreground">{meta.label}</span>
-              </div>
-              <div className="mt-1 text-2xl font-semibold tabular-nums">{counts[st]}</div>
-              <div className="text-[11px] text-muted-foreground">propiedades</div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-3 text-xs text-muted-foreground">
-        Cobertura {coverage.pct}% · {coverage.expected} esperados · {coverage.automatic} automáticos ·{" "}
-        {coverage.manual} manuales · {coverage.pending} pendientes
-      </div>
-
-      {monitored.length === 0 ? (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-          <span>Aún no configuras servicios monitoreados.</span>
-          <Link to="/properties" className="text-sm text-foreground hover:underline">
-            Configurar servicios →
-          </Link>
-        </div>
-      ) : (
-        <ul className="mt-4 divide-y divide-border">
-          {visible.slice(0, 12).map((m) => {
-            const meta = SERVICE_STATUS_META[m.status];
-            const prop = propertyById.get(m.propertyId);
-            return (
-              <li key={m.propertyId} className="py-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <Link
-                      to="/properties/$id"
-                      params={{ id: m.propertyId }}
-                      className="text-sm font-medium hover:underline"
-                    >
-                      {prop?.name ?? "Propiedad"}
-                    </Link>
-                    <div className="text-xs text-muted-foreground">{prop?.address ?? ""}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="text-sm font-semibold tabular-nums">
-                        {m.totalDue > 0 ? formatCLP(m.totalDue) : "—"}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {m.missing > 0 ? `${m.missing} sin información` : "Información completa"}
-                      </div>
-                    </div>
-                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${meta.className}`}>
-                      {meta.label}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {m.services.map((ev) => {
-                    const sm = SERVICE_STATUS_META[ev.status];
-                    return (
-                      <span
-                        key={ev.service.id}
-                        className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] ${sm.className}`}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${sm.dot}`} />
-                        {serviceTypeLabel(ev.service.service_type)}
-                        {" · "}
-                        {ev.status === "unknown" ? "Sin información" : formatMonthsDue(ev.monthsDue)}
-                      </span>
-                    );
-                  })}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
-  );
 }
 
 function BillsSection({ bills, unitsById }: { bills: Bill[]; unitsById: Map<string, Unit & { properties: Property | null }> }) {
