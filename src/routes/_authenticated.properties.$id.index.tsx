@@ -517,6 +517,15 @@ function UnitsTab({
                           onChange={(e) => setEditDraft({ ...editDraft, rent_start_date: e.target.value })}
                         />
                       </div>
+                      <div className="md:col-span-3 space-y-1.5">
+                        <Label>Término del contrato</Label>
+                        <Input
+                          type="date"
+                          value={editDraft.rent_end_date}
+                          onChange={(e) => setEditDraft({ ...editDraft, rent_end_date: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground">Deja vacío para arriendo indefinido. Se usa para alertar vencimientos.</p>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 flex justify-end gap-2">
