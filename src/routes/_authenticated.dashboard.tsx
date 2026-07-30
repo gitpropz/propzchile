@@ -868,20 +868,72 @@ function billStatus(b: Bill): { label: string; className: string; overdue: numbe
   return { label: `Atrasado ${overdue}d`, className: "bg-destructive/15 text-destructive border-destructive/30", overdue };
 }
 
-function ServicesMonitorSection({
-  services,
-  unitsById,
-}: {
-  services: MonitoredService[];
-  unitsById: Map<string, Unit & { properties: Property | null }>;
-}) {
-  const active = services.filter((s) => s.active);
-  const evaluated = active.map((s) => ({
-    service: s,
-    ev: evaluateServiceAmount(s, s.last_detected_amount == null ? null : Number(s.last_detected_amount)),
-  }));
-  const alerts = evaluated.filter((e) => e.ev.level === "alert" || e.ev.level === "warning");
-  const expectedTotal = active.reduce((sum, s) => sum + Number(s.expected_amount ?? 0), 0);
+function ServicesMonitorSection({ orgId }: { orgId?: string }) {
+  const period = periodKey();
+  const [filterStatus, setFilterStatus] = useState<ServiceStatus | null>(null);
+
+  const servicesQuery = useQuery({
+    queryKey: ["dash-monitored-services", orgId],
+    queryFn: async (): Promise<MonitoredService[]> => {
+      const { data, error } = await supabase
+        .from("monitored_services")
+        .select("*")
+        .eq("organization_id", orgId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  const readingsQuery = useQuery({
+    queryKey: ["dash-service-readings", orgId, period],
+    queryFn: async (): Promise<ServiceReading[]> => {
+      const { data, error } = await supabase
+        .from("service_readings")
+        .select("*")
+        .eq("organization_id", orgId!)
+        .eq("period", period);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  const propertiesQuery = useQuery({
+    queryKey: ["dash-properties", orgId],
+    queryFn: async (): Promise<Property[]> => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("id,name,address,comuna")
+        .eq("organization_id", orgId!)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  const services = servicesQuery.data ?? [];
+  const index = readingsByService(readingsQuery.data ?? [], period);
+  const coverage = computeCoverage(services, index);
+
+  const propertyIds = Array.from(
+    new Set(services.filter((s) => s.active && s.property_id).map((s) => s.property_id as string)),
+  );
+  const monitored = propertyIds.map((pid) => evaluateProperty(pid, services, index));
+  const propertyById = new Map((propertiesQuery.data ?? []).map((p) => [p.id, p]));
+
+  const counts: Record<ServiceStatus, number> = {
+    normal: monitored.filter((m) => m.status === "normal").length,
+    over: monitored.filter((m) => m.status === "over").length,
+    critical: monitored.filter((m) => m.status === "critical").length,
+    unknown: monitored.filter((m) => m.status === "unknown").length,
+  };
+
+  const visible = (filterStatus ? monitored.filter((m) => m.status === filterStatus) : monitored)
+    .slice()
+    .sort((a, b) => SERVICE_STATUS_META[b.status].rank - SERVICE_STATUS_META[a.status].rank);
 
   return (
     <section className="mt-8 rounded-2xl border border-border bg-card p-5">
@@ -889,16 +941,47 @@ function ServicesMonitorSection({
         <div>
           <h2 className="text-sm font-semibold">Monitoreo de servicios</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Servicios configurados por unidad. Cuando cargues un resumen de Servipag, Propz los identificará por
-            su número de cliente y avisará si el monto supera el umbral definido.
+            {periodLabelEs(period)} · estado por propiedad según los meses de deuda de sus servicios.
           </p>
         </div>
-        <div className="text-sm text-muted-foreground">
-          {active.length} activos · {alerts.length} con alerta · Esperado {formatCLP(expectedTotal)}
-        </div>
+        <Link to="/services/update">
+          <Button variant="outline" size="sm">
+            <FileUp className="mr-2 h-4 w-4" /> Actualizar servicios
+          </Button>
+        </Link>
       </div>
 
-      {active.length === 0 ? (
+      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {(["normal", "over", "critical", "unknown"] as ServiceStatus[]).map((st) => {
+          const meta = SERVICE_STATUS_META[st];
+          const activeFilter = filterStatus === st;
+          return (
+            <button
+              key={st}
+              type="button"
+              onClick={() => setFilterStatus(activeFilter ? null : st)}
+              className={cn(
+                "rounded-xl border px-3 py-3 text-left transition-propz",
+                activeFilter ? "border-foreground/30 bg-muted/40" : "border-border bg-background hover:bg-muted/30",
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
+                <span className="text-xs text-muted-foreground">{meta.label}</span>
+              </div>
+              <div className="mt-1 text-2xl font-semibold tabular-nums">{counts[st]}</div>
+              <div className="text-[11px] text-muted-foreground">propiedades</div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 text-xs text-muted-foreground">
+        Cobertura {coverage.pct}% · {coverage.expected} esperados · {coverage.automatic} automáticos ·{" "}
+        {coverage.manual} manuales · {coverage.pending} pendientes
+      </div>
+
+      {monitored.length === 0 ? (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
           <span>Aún no configuras servicios monitoreados.</span>
           <Link to="/properties" className="text-sm text-foreground hover:underline">
@@ -907,57 +990,59 @@ function ServicesMonitorSection({
         </div>
       ) : (
         <ul className="mt-4 divide-y divide-border">
-          {evaluated
-            .slice()
-            .sort((a, b) => rankAlert(b.ev.level) - rankAlert(a.ev.level))
-            .slice(0, 12)
-            .map(({ service: s, ev }) => {
-              const u = unitsById.get(s.unit_id);
-              return (
-                <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+          {visible.slice(0, 12).map((m) => {
+            const meta = SERVICE_STATUS_META[m.status];
+            const prop = propertyById.get(m.propertyId);
+            return (
+              <li key={m.propertyId} className="py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-medium">
-                      {u?.properties?.name ?? "Propiedad"} · {u?.label ?? "Unidad"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {serviceTypeLabel(s.service_type)}
-                      {s.service_identifier ? ` · N° ${s.service_identifier}` : ""}
-                      {s.last_detected_period ? ` · ${s.last_detected_period}` : ""}
-                    </div>
+                    <Link
+                      to="/properties/$id"
+                      params={{ id: m.propertyId }}
+                      className="text-sm font-medium hover:underline"
+                    >
+                      {prop?.name ?? "Propiedad"}
+                    </Link>
+                    <div className="text-xs text-muted-foreground">{prop?.address ?? ""}</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <div className="text-sm font-semibold tabular-nums">
-                        {s.last_detected_amount != null
-                          ? formatCLP(Number(s.last_detected_amount))
-                          : s.expected_amount != null
-                            ? formatCLP(Number(s.expected_amount))
-                            : "—"}
+                        {m.totalDue > 0 ? formatCLP(m.totalDue) : "—"}
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        {s.last_detected_amount != null ? "Último detectado" : "Valor esperado"}
-                        {ev.variationPct != null
-                          ? ` · ${ev.variationPct >= 0 ? "+" : ""}${ev.variationPct.toFixed(0)}%`
-                          : ""}
+                        {m.missing > 0 ? `${m.missing} sin información` : "Información completa"}
                       </div>
                     </div>
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${SERVICE_ALERT_CLASS[ev.level]}`}
-                    >
-                      {ev.level === "unknown" ? "En espera de Servipag" : ev.label}
+                    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${meta.className}`}>
+                      {meta.label}
                     </span>
                   </div>
-                </li>
-              );
-            })}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {m.services.map((ev) => {
+                    const sm = SERVICE_STATUS_META[ev.status];
+                    return (
+                      <span
+                        key={ev.service.id}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] ${sm.className}`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${sm.dot}`} />
+                        {serviceTypeLabel(ev.service.service_type)}
+                        {" · "}
+                        {ev.status === "unknown" ? "Sin información" : formatMonthsDue(ev.monthsDue)}
+                      </span>
+                    );
+                  })}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
   );
-}
-
-function rankAlert(level: string): number {
-  return level === "alert" ? 3 : level === "warning" ? 2 : level === "ok" ? 1 : 0;
 }
 
 function BillsSection({ bills, unitsById }: { bills: Bill[]; unitsById: Map<string, Unit & { properties: Property | null }> }) {
