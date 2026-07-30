@@ -25,19 +25,10 @@ import {
   type PaymentStatus,
   type RentPayment,
 } from "@/lib/rent-status";
-import {
-  SERVICE_STATUS_META,
-  computeCoverage,
-  evaluateProperty,
-  formatMonthsDue,
-  periodKey,
-  periodLabelEs,
-  readingsByService,
-  serviceTypeLabel,
-  type MonitoredService,
-  type ServiceReading,
-  type ServiceStatus,
-} from "@/lib/monitored-services";
+import { useServicesMonitor } from "@/hooks/use-services-monitor";
+import { ServicesSummaryStrip } from "@/components/services-summary-strip";
+import { UnitServicesIndicator } from "@/components/unit-services-indicator";
+import type { PropertyMonitoring } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 import { evaluateLease, EXPIRY_WARNING_DAYS } from "@/lib/lease-expiry";
 
