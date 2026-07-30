@@ -245,6 +245,15 @@ function ContractCard({ unit }: { unit: Unit }) {
         </div>
       )}
 
+      {(unit as any).rent_end_date ? (
+        <div className={`mt-1.5 text-xs ${lease.status === "expired" ? "text-destructive" : lease.status === "expiring" ? "text-warning" : "text-muted-foreground"}`}>
+          Término: {formatLeaseDate((unit as any).rent_end_date)}
+          {lease.daysLeft != null ? ` · ${leaseDaysLabel(lease.daysLeft)}` : ""}
+        </div>
+      ) : unit.rent_active ? (
+        <div className="mt-1.5 text-xs text-muted-foreground">Término: no definido (indefinido)</div>
+      ) : null}
+
       <Link
         to="/properties/$id"
         params={{ id: unit.property_id }}
