@@ -174,11 +174,15 @@ function ContractCard({ unit }: { unit: Unit }) {
   const rentStart = unit.rent_start_date ? new Date(unit.rent_start_date) : null;
   const nextPaymentDay = unit.payment_day ?? 5;
   const today = new Date();
+  const lease = evaluateLease(unit.rent_active, (unit as any).rent_end_date, today);
   const nextPayment = new Date(today.getFullYear(), today.getMonth(), nextPaymentDay);
   if (nextPayment < today) {
     nextPayment.setMonth(nextPayment.getMonth() + 1);
   }
   const daysToPayment = Math.round((nextPayment.getTime() - today.getTime()) / 86_400_000);
+
+  const expiryMeta =
+    lease.status === "expiring" || lease.status === "expired" ? LEASE_STATUS_META[lease.status] : null;
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 transition-colors hover:border-brand/50">
@@ -192,15 +196,21 @@ function ContractCard({ unit }: { unit: Unit }) {
             {UNIT_TYPE_LABELS[unit.unit_type]} · {unit.properties?.name ?? "Propiedad"}
           </p>
         </div>
-        {missingInfo ? (
-          <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
-            Incompleto
-          </span>
-        ) : (
-          <span className="shrink-0 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
-            Activo
-          </span>
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {expiryMeta ? (
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${expiryMeta.className}`}>
+              {expiryMeta.label}
+            </span>
+          ) : missingInfo ? (
+            <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
+              Incompleto
+            </span>
+          ) : (
+            <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
+              Activo
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
