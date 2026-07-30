@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, MapPin, User, Calendar, AlertTriangle, Plus, ArrowRight } from "lucide-react";
+import { FileText, MapPin, User, Calendar, AlertTriangle, Plus, ArrowRight, CalendarClock, CalendarX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
 import { formatMoney, formatDate } from "@/lib/format";
 import { UNIT_TYPE_LABELS } from "@/lib/property-types";
+import { evaluateLease, leaseDaysLabel, LEASE_STATUS_META, formatLeaseDate, EXPIRY_WARNING_DAYS } from "@/lib/lease-expiry";
 import type { Database } from "@/integrations/supabase/types";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"] & {
