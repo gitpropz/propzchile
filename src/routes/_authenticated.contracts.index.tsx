@@ -41,6 +41,23 @@ function ContractsIndex() {
   const units = query.data ?? [];
   const withMissingTenant = units.filter((u) => !u.tenant_name || !u.tenant_email);
   const today = new Date();
+
+  // Vigencia de cada contrato, para ordenar por urgencia de vencimiento.
+  const withLease = units.map((u) => ({ unit: u, lease: evaluateLease(u.rent_active, (u as any).rent_end_date, today) }));
+  const expiringSoon = withLease.filter((c) => c.lease.status === "expiring").length;
+  const expired = withLease.filter((c) => c.lease.status === "expired").length;
+
+  // Orden: vencidos → por vencer → indefinidos → vigentes (cada grupo por fecha de término ascendente).
+  const ranked = [...withLease].sort((a, b) => {
+    const ra = LEASE_STATUS_META[a.lease.status].rank;
+    const rb = LEASE_STATUS_META[b.lease.status].rank;
+    if (ra !== rb) return rb - ra;
+    // Dentro del mismo estado, el que vence antes (más negativo) primero.
+    const da = a.lease.daysLeft ?? Number.POSITIVE_INFINITY;
+    const db = b.lease.daysLeft ?? Number.POSITIVE_INFINITY;
+    return da - db;
+  });
+
   const currentMonthLabel = today.toLocaleDateString("es-CL", { month: "long", year: "numeric" });
 
   return (
