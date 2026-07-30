@@ -1,0 +1,1 @@
+ALTER TABLE public.rentable_units ADD COLUMN IF NOT EXISTS rent_end_date date;
