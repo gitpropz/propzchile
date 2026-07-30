@@ -189,7 +189,7 @@ function PropertyDetail() {
         </TabsContent>
 
         <TabsContent value="bills" className="pt-4">
-          <MonitoredServicesPanel organizationId={p.organization_id} units={unitsQuery.data ?? []} />
+          <MonitoredServicesPanel organizationId={p.organization_id} propertyId={id} />
         </TabsContent>
       </Tabs>
     </div>
