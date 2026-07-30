@@ -301,6 +301,7 @@ function UnitsTab({
         tenant_account_numbers: splitList(editDraft.tenant_account_numbers),
         rent_active: editDraft.rent_active,
         rent_start_date: editDraft.rent_start_date || null,
+        rent_end_date: editDraft.rent_end_date || null,
       } as any)
       .eq("id", unitId);
     if (error) {
