@@ -521,6 +521,29 @@ function Dashboard() {
         </Link>
       ) : null}
 
+      {expiringContracts.length > 0 ? (
+        <Link
+          to="/contracts"
+          className={`mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs hover:opacity-90 ${
+            expiredCount > 0
+              ? "border-destructive/40 bg-destructive/10"
+              : "border-warning/40 bg-warning/10 hover:bg-warning/15"
+          }`}
+        >
+          {expiredCount > 0 ? (
+            <CalendarX className="h-3.5 w-3.5 shrink-0 text-destructive" />
+          ) : (
+            <CalendarClock className="h-3.5 w-3.5 shrink-0 text-warning" />
+          )}
+          <span className="font-medium text-foreground">
+            {expiredCount > 0
+              ? `${expiredCount} ${expiredCount === 1 ? "contrato vencido" : "contratos vencidos"}`
+              : `${expiringSoonCount} ${expiringSoonCount === 1 ? "contrato por vencer" : "contratos por vencer"} en ${EXPIRY_WARNING_DAYS} días`}
+          </span>
+          <span className="underline underline-offset-2">Ver contratos →</span>
+        </Link>
+      ) : null}
+
       {prev ? (
         <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
           {deltaConfirmed >= 0 ? (
