@@ -558,8 +558,12 @@ function Dashboard() {
         <TrendChart data={trend} />
       </section>
 
-      {/* Servicios monitoreados */}
-      <ServicesMonitorSection orgId={orgId} />
+      {/* Resumen ejecutivo de servicios */}
+      <ServicesSummaryStrip
+        period={servicesMonitor.period}
+        counts={servicesMonitor.counts}
+        coverage={servicesMonitor.coverage}
+      />
 
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
 
