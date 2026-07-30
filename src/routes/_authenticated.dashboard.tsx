@@ -184,6 +184,20 @@ function Dashboard() {
     [unitsQuery.data],
   );
   const activeUnits = useMemo(() => allUnits.filter((u) => u.rent_active), [allUnits]);
+
+  // Monitoreo de servicios (misma lógica, nueva presentación).
+  const servicesMonitor = useServicesMonitor(orgId);
+
+  /** Unidad principal (depto/casa) de cada propiedad: ahí vive el indicador de servicios. */
+  const mainUnitIdByProperty = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const u of allUnits) {
+      const pid = u.properties?.id;
+      if (!pid || map.has(pid)) continue;
+      if (u.unit_type === "apartment" || u.unit_type === "house") map.set(pid, u.id);
+    }
+    return map;
+  }, [allUnits]);
   const unrentedUnits = useMemo(() => allUnits.filter((u) => !u.rent_active), [allUnits]);
 
   // Contratos próximos a vencer o ya vencidos (sobre unidades arrendadas).
@@ -620,6 +634,14 @@ function Dashboard() {
                 onUndo={r.payment ? () => undoConfirm(r.payment!.id) : undefined}
                 onEditAmount={() => editExpectedAmount(r.unit, r.payment)}
                 onClearReview={r.payment ? () => clearReview(r.payment!.id) : undefined}
+                orgId={orgId}
+                servicesPeriod={servicesMonitor.period}
+                monitoring={
+                  r.unit.properties && mainUnitIdByProperty.get(r.unit.properties.id) === r.unit.id
+                    ? servicesMonitor.byProperty.get(r.unit.properties.id) ?? null
+                    : null
+                }
+                onServicesSaved={() => void servicesMonitor.refetch()}
               />
             ))}
           </div>
