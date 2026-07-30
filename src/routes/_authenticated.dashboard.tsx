@@ -736,6 +736,10 @@ function PaymentRow({
   onUndo,
   onEditAmount,
   onClearReview,
+  orgId,
+  servicesPeriod,
+  monitoring,
+  onServicesSaved,
 }: {
   unit: Unit;
   property: Property | null;
@@ -748,6 +752,10 @@ function PaymentRow({
   onUndo?: () => void;
   onEditAmount: () => void;
   onClearReview?: () => void;
+  orgId?: string;
+  servicesPeriod: string;
+  monitoring: PropertyMonitoring | null;
+  onServicesSaved: () => void;
 }) {
   const needsReview = !!(payment as any)?.needs_review;
   const total = payment?.amount != null ? Number(payment.amount) : Number(unit.base_rent_amount ?? 0);
@@ -794,6 +802,16 @@ function PaymentRow({
           style={{ width: `${progress}%` }}
         />
       </div>
+
+      {/* Servicios de la propiedad (solo unidad principal) */}
+      {monitoring && orgId ? (
+        <UnitServicesIndicator
+          organizationId={orgId}
+          monitoring={monitoring}
+          period={servicesPeriod}
+          onSaved={onServicesSaved}
+        />
+      ) : null}
 
       {/* Fila 3: Acciones */}
       <div className="flex items-center justify-between gap-1">
