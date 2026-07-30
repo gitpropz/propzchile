@@ -182,10 +182,11 @@ export type Database = {
           last_detected_period: string | null
           notes: string | null
           organization_id: string
+          property_id: string | null
           provider: string | null
           service_identifier: string | null
           service_type: string
-          unit_id: string
+          unit_id: string | null
           updated_at: string
         }
         Insert: {
@@ -202,10 +203,11 @@ export type Database = {
           last_detected_period?: string | null
           notes?: string | null
           organization_id: string
+          property_id?: string | null
           provider?: string | null
           service_identifier?: string | null
           service_type?: string
-          unit_id: string
+          unit_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -222,13 +224,21 @@ export type Database = {
           last_detected_period?: string | null
           notes?: string | null
           organization_id?: string
+          property_id?: string | null
           provider?: string | null
           service_identifier?: string | null
           service_type?: string
-          unit_id?: string
+          unit_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "monitored_services_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "monitored_services_unit_id_fkey"
             columns: ["unit_id"]
@@ -768,6 +778,148 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_import_batches: {
+        Row: {
+          channel: string
+          created_at: string
+          created_by: string | null
+          detected_count: number
+          documents_count: number
+          id: string
+          matched_count: number
+          notes: string | null
+          organization_id: string
+          period: string | null
+          raw: Json | null
+          updated_at: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          detected_count?: number
+          documents_count?: number
+          id?: string
+          matched_count?: number
+          notes?: string | null
+          organization_id: string
+          period?: string | null
+          raw?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          detected_count?: number
+          documents_count?: number
+          id?: string
+          matched_count?: number
+          notes?: string | null
+          organization_id?: string
+          period?: string | null
+          raw?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_import_batches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_readings: {
+        Row: {
+          amount_due: number
+          batch_id: string | null
+          created_at: string
+          created_by: string | null
+          detected_at: string
+          document_ref: string | null
+          expected_amount: number | null
+          id: string
+          months_due: number | null
+          notes: string | null
+          organization_id: string
+          period: string
+          property_id: string
+          raw: Json | null
+          service_id: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          amount_due: number
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          detected_at?: string
+          document_ref?: string | null
+          expected_amount?: number | null
+          id?: string
+          months_due?: number | null
+          notes?: string | null
+          organization_id: string
+          period: string
+          property_id: string
+          raw?: Json | null
+          service_id: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_due?: number
+          batch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          detected_at?: string
+          document_ref?: string | null
+          expected_amount?: number | null
+          id?: string
+          months_due?: number | null
+          notes?: string | null
+          organization_id?: string
+          period?: string
+          property_id?: string
+          raw?: Json | null
+          service_id?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_readings_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "service_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_readings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_readings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_readings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "monitored_services"
             referencedColumns: ["id"]
           },
         ]
