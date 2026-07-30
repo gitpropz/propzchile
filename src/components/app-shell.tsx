@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Building, FileText, Settings, LogOut, Menu, X, FileUp } from "lucide-react";
+import { LayoutDashboard, Building, FileText, Settings, LogOut, Menu, X, FileUp, Gauge } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
