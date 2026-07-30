@@ -546,10 +546,7 @@ function Dashboard() {
       </section>
 
       {/* Servicios monitoreados */}
-      <ServicesMonitorSection
-        services={servicesQuery.data ?? []}
-        unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))}
-      />
+      <ServicesMonitorSection orgId={orgId} />
 
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
 
