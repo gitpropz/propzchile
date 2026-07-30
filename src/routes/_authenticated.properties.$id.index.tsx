@@ -272,6 +272,7 @@ function UnitsTab({
       tenant_account_numbers: (((u as any).tenant_account_numbers ?? []) as string[]).join("\n"),
       rent_active: !!u.rent_active,
       rent_start_date: u.rent_start_date ?? "",
+      rent_end_date: (u as any).rent_end_date ?? "",
     });
   }
 
