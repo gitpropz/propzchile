@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Building, FileText, Settings, LogOut, Menu, X, FileUp } from "lucide-react";
+import { LayoutDashboard, Building, FileText, Settings, LogOut, Menu, X, FileUp, Gauge } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ const nav = [
   { to: "/properties", label: "Propiedades", icon: Building },
   { to: "/contracts", label: "Contratos", icon: FileText },
   { to: "/rent/import", label: "Importar cartola", icon: FileUp },
+  { to: "/services/update", label: "Actualizar servicios", icon: Gauge },
   { to: "/settings/organization", label: "Configuración", icon: Settings, match: "/settings" },
 ] as const;
 

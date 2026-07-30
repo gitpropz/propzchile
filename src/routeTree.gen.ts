@@ -21,6 +21,7 @@ import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsTeamRouteImport } from './routes/_authenticated.settings.team'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated.settings.profile'
 import { Route as AuthenticatedSettingsOrganizationRouteImport } from './routes/_authenticated.settings.organization'
+import { Route as AuthenticatedServicesUpdateRouteImport } from './routes/_authenticated.services.update'
 import { Route as AuthenticatedRentImportRouteImport } from './routes/_authenticated.rent.import'
 import { Route as AuthenticatedPropertiesNewRouteImport } from './routes/_authenticated.properties.new'
 import { Route as AuthenticatedPropertiesIdIndexRouteImport } from './routes/_authenticated.properties.$id.index'
@@ -91,6 +92,12 @@ const AuthenticatedSettingsOrganizationRoute =
     path: '/organization',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedServicesUpdateRoute =
+  AuthenticatedServicesUpdateRouteImport.update({
+    id: '/services/update',
+    path: '/services/update',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedRentImportRoute = AuthenticatedRentImportRouteImport.update({
   id: '/rent/import',
   path: '/rent/import',
@@ -123,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/rent/import': typeof AuthenticatedRentImportRoute
+  '/services/update': typeof AuthenticatedServicesUpdateRoute
   '/settings/organization': typeof AuthenticatedSettingsOrganizationRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/team': typeof AuthenticatedSettingsTeamRoute
@@ -138,6 +146,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/rent/import': typeof AuthenticatedRentImportRoute
+  '/services/update': typeof AuthenticatedServicesUpdateRoute
   '/settings/organization': typeof AuthenticatedSettingsOrganizationRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/settings/team': typeof AuthenticatedSettingsTeamRoute
@@ -157,6 +166,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/_authenticated/rent/import': typeof AuthenticatedRentImportRoute
+  '/_authenticated/services/update': typeof AuthenticatedServicesUpdateRoute
   '/_authenticated/settings/organization': typeof AuthenticatedSettingsOrganizationRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/settings/team': typeof AuthenticatedSettingsTeamRoute
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/properties/new'
     | '/rent/import'
+    | '/services/update'
     | '/settings/organization'
     | '/settings/profile'
     | '/settings/team'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/properties/new'
     | '/rent/import'
+    | '/services/update'
     | '/settings/organization'
     | '/settings/profile'
     | '/settings/team'
@@ -209,6 +221,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/properties/new'
     | '/_authenticated/rent/import'
+    | '/_authenticated/services/update'
     | '/_authenticated/settings/organization'
     | '/_authenticated/settings/profile'
     | '/_authenticated/settings/team'
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsOrganizationRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/services/update': {
+      id: '/_authenticated/services/update'
+      path: '/services/update'
+      fullPath: '/services/update'
+      preLoaderRoute: typeof AuthenticatedServicesUpdateRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/rent/import': {
       id: '/_authenticated/rent/import'
       path: '/rent/import'
@@ -387,6 +407,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedRentImportRoute: typeof AuthenticatedRentImportRoute
+  AuthenticatedServicesUpdateRoute: typeof AuthenticatedServicesUpdateRoute
   AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
 }
 
@@ -395,6 +416,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedRentImportRoute: AuthenticatedRentImportRoute,
+  AuthenticatedServicesUpdateRoute: AuthenticatedServicesUpdateRoute,
   AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
 }
 
@@ -410,3 +432,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
