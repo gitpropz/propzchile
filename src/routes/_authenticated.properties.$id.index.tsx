@@ -206,6 +206,18 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Badge de vencimiento para una unidad arrendada con fecha de término. */
+function UnitExpiryBadge({ rentEndDate }: { rentEndDate: string }) {
+  const ev = evaluateLease(true, rentEndDate);
+  if (ev.status === "active") return null;
+  const meta = LEASE_STATUS_META[ev.status];
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${meta.className}`}>
+      {meta.label}{ev.daysLeft != null ? ` · ${leaseDaysLabel(ev.daysLeft)}` : ""}
+    </span>
+  );
+}
+
 function UnitsTab({
   propertyId,
   organizationId,
