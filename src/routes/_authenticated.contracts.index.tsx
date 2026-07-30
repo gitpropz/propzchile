@@ -134,8 +134,8 @@ function ContractsIndex() {
           <EmptyState />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
-            {units.map((u) => (
-              <ContractCard key={u.id} unit={u} />
+            {ranked.map(({ unit }) => (
+              <ContractCard key={unit.id} unit={unit} />
             ))}
           </div>
         )}
