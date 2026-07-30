@@ -39,6 +39,7 @@ import {
   type ServiceStatus,
 } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
+import { evaluateLease, EXPIRY_WARNING_DAYS } from "@/lib/lease-expiry";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address" | "comuna">;
