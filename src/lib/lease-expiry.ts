@@ -29,7 +29,7 @@ export const LEASE_STATUS_META: Record<
     className: "bg-success/15 text-success border-success/30",
     rank: 0,
   },
-  open-ended: {
+  "open-ended": {
     label: "Indefinido",
     className: "bg-info/15 text-info border-info/30",
     rank: 1,
