@@ -26,10 +26,17 @@ import {
   type RentPayment,
 } from "@/lib/rent-status";
 import {
-  SERVICE_ALERT_CLASS,
-  evaluateServiceAmount,
+  SERVICE_STATUS_META,
+  computeCoverage,
+  evaluateProperty,
+  formatMonthsDue,
+  periodKey,
+  periodLabelEs,
+  readingsByService,
   serviceTypeLabel,
   type MonitoredService,
+  type ServiceReading,
+  type ServiceStatus,
 } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 
