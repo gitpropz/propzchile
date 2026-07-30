@@ -701,6 +701,7 @@ export type Database = {
           payment_day: number | null
           property_id: string
           rent_active: boolean
+          rent_end_date: string | null
           rent_start_date: string | null
           surface_m2: number | null
           tenant_account_numbers: string[]
@@ -727,6 +728,7 @@ export type Database = {
           payment_day?: number | null
           property_id: string
           rent_active?: boolean
+          rent_end_date?: string | null
           rent_start_date?: string | null
           surface_m2?: number | null
           tenant_account_numbers?: string[]
@@ -753,6 +755,7 @@ export type Database = {
           payment_day?: number | null
           property_id?: string
           rent_active?: boolean
+          rent_end_date?: string | null
           rent_start_date?: string | null
           surface_m2?: number | null
           tenant_account_numbers?: string[]

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Eye, FileUp, Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Eye, FileUp, Plus, TrendingDown, TrendingUp, Wallet, CalendarClock, CalendarX } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ import {
   type ServiceStatus,
 } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
+import { evaluateLease, EXPIRY_WARNING_DAYS } from "@/lib/lease-expiry";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address" | "comuna">;
@@ -193,6 +194,17 @@ function Dashboard() {
   );
   const activeUnits = useMemo(() => allUnits.filter((u) => u.rent_active), [allUnits]);
   const unrentedUnits = useMemo(() => allUnits.filter((u) => !u.rent_active), [allUnits]);
+
+  // Contratos próximos a vencer o ya vencidos (sobre unidades arrendadas).
+  const expiringContracts = useMemo(
+    () =>
+      activeUnits
+        .map((u) => ({ unit: u, lease: evaluateLease(true, (u as any).rent_end_date) }))
+        .filter((c) => c.lease.status === "expiring" || c.lease.status === "expired"),
+    [activeUnits],
+  );
+  const expiredCount = expiringContracts.filter((c) => c.lease.status === "expired").length;
+  const expiringSoonCount = expiringContracts.length - expiredCount;
 
   const paymentsByKey = useMemo(() => {
     const map = new Map<string, RentPayment>();
@@ -506,6 +518,29 @@ function Dashboard() {
             {unrentedUnits.length} {unrentedUnits.length === 1 ? "unidad" : "unidades"} PENDIENTES de arrendar
           </span>
           <span className="text-warning underline underline-offset-2">Ir a propiedades →</span>
+        </Link>
+      ) : null}
+
+      {expiringContracts.length > 0 ? (
+        <Link
+          to="/contracts"
+          className={`mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs hover:opacity-90 ${
+            expiredCount > 0
+              ? "border-destructive/40 bg-destructive/10"
+              : "border-warning/40 bg-warning/10 hover:bg-warning/15"
+          }`}
+        >
+          {expiredCount > 0 ? (
+            <CalendarX className="h-3.5 w-3.5 shrink-0 text-destructive" />
+          ) : (
+            <CalendarClock className="h-3.5 w-3.5 shrink-0 text-warning" />
+          )}
+          <span className="font-medium text-foreground">
+            {expiredCount > 0
+              ? `${expiredCount} ${expiredCount === 1 ? "contrato vencido" : "contratos vencidos"}`
+              : `${expiringSoonCount} ${expiringSoonCount === 1 ? "contrato por vencer" : "contratos por vencer"} en ${EXPIRY_WARNING_DAYS} días`}
+          </span>
+          <span className="underline underline-offset-2">Ver contratos →</span>
         </Link>
       ) : null}
 

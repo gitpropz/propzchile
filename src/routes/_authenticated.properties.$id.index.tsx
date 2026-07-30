@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MonitoredServicesPanel } from "@/components/monitored-services-panel";
 import { UNIT_TYPE_LABELS, UNIT_TYPE_OPTIONS, CURRENCY_OPTIONS, type UnitType, type Currency } from "@/lib/property-types";
 import { formatMoney } from "@/lib/format";
+import { evaluateLease, leaseDaysLabel, LEASE_STATUS_META } from "@/lib/lease-expiry";
 import type { Database } from "@/integrations/supabase/types";
 
 type Property = Database["public"]["Tables"]["properties"]["Row"];
@@ -205,6 +206,18 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Badge de vencimiento para una unidad arrendada con fecha de término. */
+function UnitExpiryBadge({ rentEndDate }: { rentEndDate: string }) {
+  const ev = evaluateLease(true, rentEndDate);
+  if (ev.status === "active") return null;
+  const meta = LEASE_STATUS_META[ev.status];
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${meta.className}`}>
+      {meta.label}{ev.daysLeft != null ? ` · ${leaseDaysLabel(ev.daysLeft)}` : ""}
+    </span>
+  );
+}
+
 function UnitsTab({
   propertyId,
   organizationId,
@@ -251,6 +264,7 @@ function UnitsTab({
     tenant_account_numbers: string;
     rent_active: boolean;
     rent_start_date: string;
+    rent_end_date: string;
   } | null>(null);
 
   function startEdit(u: Unit) {
@@ -271,6 +285,7 @@ function UnitsTab({
       tenant_account_numbers: (((u as any).tenant_account_numbers ?? []) as string[]).join("\n"),
       rent_active: !!u.rent_active,
       rent_start_date: u.rent_start_date ?? "",
+      rent_end_date: (u as any).rent_end_date ?? "",
     });
   }
 
@@ -299,6 +314,7 @@ function UnitsTab({
         tenant_account_numbers: splitList(editDraft.tenant_account_numbers),
         rent_active: editDraft.rent_active,
         rent_start_date: editDraft.rent_start_date || null,
+        rent_end_date: editDraft.rent_end_date || null,
       } as any)
       .eq("id", unitId);
     if (error) {
@@ -514,6 +530,15 @@ function UnitsTab({
                           onChange={(e) => setEditDraft({ ...editDraft, rent_start_date: e.target.value })}
                         />
                       </div>
+                      <div className="md:col-span-3 space-y-1.5">
+                        <Label>Término del contrato</Label>
+                        <Input
+                          type="date"
+                          value={editDraft.rent_end_date}
+                          onChange={(e) => setEditDraft({ ...editDraft, rent_end_date: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground">Deja vacío para arriendo indefinido. Se usa para alertar vencimientos.</p>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 flex justify-end gap-2">
@@ -536,8 +561,13 @@ function UnitsTab({
                       {u.tenant_name ? ` · ${u.tenant_name}` : ""}
                     </div>
                     {u.rent_active ? (
-                      <div className="mt-1 inline-flex items-center rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[11px] text-success">
-                        Arrendada
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="inline-flex items-center rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-[11px] text-success">
+                          Arrendada
+                        </span>
+                        {u.rent_end_date ? (
+                          <UnitExpiryBadge rentEndDate={u.rent_end_date} />
+                        ) : null}
                       </div>
                     ) : null}
                   </div>

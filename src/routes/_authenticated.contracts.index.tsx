@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, MapPin, User, Calendar, AlertTriangle, Plus, ArrowRight } from "lucide-react";
+import { FileText, MapPin, User, Calendar, AlertTriangle, Plus, ArrowRight, CalendarClock, CalendarX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
 import { formatMoney, formatDate } from "@/lib/format";
 import { UNIT_TYPE_LABELS } from "@/lib/property-types";
+import { evaluateLease, leaseDaysLabel, LEASE_STATUS_META, formatLeaseDate, EXPIRY_WARNING_DAYS } from "@/lib/lease-expiry";
 import type { Database } from "@/integrations/supabase/types";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"] & {
@@ -40,6 +41,23 @@ function ContractsIndex() {
   const units = query.data ?? [];
   const withMissingTenant = units.filter((u) => !u.tenant_name || !u.tenant_email);
   const today = new Date();
+
+  // Vigencia de cada contrato, para ordenar por urgencia de vencimiento.
+  const withLease = units.map((u) => ({ unit: u, lease: evaluateLease(u.rent_active, (u as any).rent_end_date, today) }));
+  const expiringSoon = withLease.filter((c) => c.lease.status === "expiring").length;
+  const expired = withLease.filter((c) => c.lease.status === "expired").length;
+
+  // Orden: vencidos → por vencer → indefinidos → vigentes (cada grupo por fecha de término ascendente).
+  const ranked = [...withLease].sort((a, b) => {
+    const ra = LEASE_STATUS_META[a.lease.status].rank;
+    const rb = LEASE_STATUS_META[b.lease.status].rank;
+    if (ra !== rb) return rb - ra;
+    // Dentro del mismo estado, el que vence antes (más negativo) primero.
+    const da = a.lease.daysLeft ?? Number.POSITIVE_INFINITY;
+    const db = b.lease.daysLeft ?? Number.POSITIVE_INFINITY;
+    return da - db;
+  });
+
   const currentMonthLabel = today.toLocaleDateString("es-CL", { month: "long", year: "numeric" });
 
   return (
@@ -57,6 +75,38 @@ function ContractsIndex() {
           </Button>
         </Link>
       </div>
+
+      {expired > 0 && (
+        <div className="mt-5 rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+          <div className="flex items-start gap-3">
+            <CalendarX className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {expired === 1 ? "1 contrato vencido" : `${expired} contratos vencidos`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Renueva o marca la unidad como vacante según corresponda.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {expiringSoon > 0 && (
+        <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-4">
+          <div className="flex items-start gap-3">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {expiringSoon === 1 ? "1 contrato" : `${expiringSoon} contratos`} vencen en los próximos {EXPIRY_WARNING_DAYS} días
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Anticípate a la renovación para evitar vacantes.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {withMissingTenant.length > 0 && (
         <div className="mt-5 rounded-xl border border-warning/40 bg-warning/10 p-4">
@@ -84,8 +134,8 @@ function ContractsIndex() {
           <EmptyState />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
-            {units.map((u) => (
-              <ContractCard key={u.id} unit={u} />
+            {ranked.map(({ unit }) => (
+              <ContractCard key={unit.id} unit={unit} />
             ))}
           </div>
         )}
@@ -94,7 +144,7 @@ function ContractsIndex() {
       {units.length > 0 && (
         <div className="mt-8 rounded-xl border border-border bg-card p-5">
           <h2 className="text-sm font-semibold">Resumen — {currentMonthLabel}</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="mt-4 grid gap-4 sm:grid-cols-4">
             <div>
               <div className="text-xs text-muted-foreground">Contratos activos</div>
               <div className="text-lg font-semibold tabular-nums">{units.length}</div>
@@ -109,8 +159,12 @@ function ContractsIndex() {
               </div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Datos incompletos</div>
-              <div className="text-lg font-semibold tabular-nums">{withMissingTenant.length}</div>
+              <div className="text-xs text-muted-foreground">Por vencer</div>
+              <div className="text-lg font-semibold tabular-nums text-warning">{expiringSoon}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Vencidos</div>
+              <div className="text-lg font-semibold tabular-nums text-destructive">{expired}</div>
             </div>
           </div>
         </div>
@@ -124,11 +178,15 @@ function ContractCard({ unit }: { unit: Unit }) {
   const rentStart = unit.rent_start_date ? new Date(unit.rent_start_date) : null;
   const nextPaymentDay = unit.payment_day ?? 5;
   const today = new Date();
+  const lease = evaluateLease(unit.rent_active, (unit as any).rent_end_date, today);
   const nextPayment = new Date(today.getFullYear(), today.getMonth(), nextPaymentDay);
   if (nextPayment < today) {
     nextPayment.setMonth(nextPayment.getMonth() + 1);
   }
   const daysToPayment = Math.round((nextPayment.getTime() - today.getTime()) / 86_400_000);
+
+  const expiryMeta =
+    lease.status === "expiring" || lease.status === "expired" ? LEASE_STATUS_META[lease.status] : null;
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 transition-colors hover:border-brand/50">
@@ -142,15 +200,21 @@ function ContractCard({ unit }: { unit: Unit }) {
             {UNIT_TYPE_LABELS[unit.unit_type]} · {unit.properties?.name ?? "Propiedad"}
           </p>
         </div>
-        {missingInfo ? (
-          <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
-            Incompleto
-          </span>
-        ) : (
-          <span className="shrink-0 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
-            Activo
-          </span>
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {expiryMeta ? (
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${expiryMeta.className}`}>
+              {expiryMeta.label}
+            </span>
+          ) : missingInfo ? (
+            <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning">
+              Incompleto
+            </span>
+          ) : (
+            <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
+              Activo
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 flex items-start gap-2 text-sm text-muted-foreground">
@@ -184,6 +248,15 @@ function ContractCard({ unit }: { unit: Unit }) {
           Inicio de arriendo: {formatDate(rentStart.toISOString())}
         </div>
       )}
+
+      {(unit as any).rent_end_date ? (
+        <div className={`mt-1.5 text-xs ${lease.status === "expired" ? "text-destructive" : lease.status === "expiring" ? "text-warning" : "text-muted-foreground"}`}>
+          Término: {formatLeaseDate((unit as any).rent_end_date)}
+          {lease.daysLeft != null ? ` · ${leaseDaysLabel(lease.daysLeft)}` : ""}
+        </div>
+      ) : unit.rent_active ? (
+        <div className="mt-1.5 text-xs text-muted-foreground">Término: no definido (indefinido)</div>
+      ) : null}
 
       <Link
         to="/properties/$id"
