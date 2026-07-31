@@ -64,3 +64,26 @@ export async function saveManualReading(params: {
 }) {
   return saveReading({ ...params, documentRef: null });
 }
+
+/**
+ * Elimina la lectura de un servicio en un período: el servicio vuelve al
+ * estado "sin información" (⚪). Útil cuando se ingresó un monto por error.
+ */
+export async function deleteReading(params: { serviceId: string; period: string }) {
+  const { error } = await supabase
+    .from("service_readings")
+    .delete()
+    .eq("service_id", params.serviceId)
+    .eq("period", params.period);
+  if (error) throw error;
+
+  await supabase
+    .from("monitored_services")
+    .update({
+      last_detected_amount: null,
+      last_detected_period: null,
+      last_detected_at: null,
+    })
+    .eq("id", params.serviceId)
+    .eq("last_detected_period", params.period);
+}
