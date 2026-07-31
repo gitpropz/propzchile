@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCLP } from "@/lib/format";
-import { saveManualReading } from "@/lib/service-readings";
+import { deleteReading, saveManualReading } from "@/lib/service-readings";
 import {
   SERVICE_STATUS_META,
   formatMonthsDue,
