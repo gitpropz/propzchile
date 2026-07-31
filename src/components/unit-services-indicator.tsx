@@ -147,6 +147,18 @@ export function UnitServicesIndicator({
                         >
                           {ev.reading ? "Editar" : "Ingresar"}
                         </Button>
+                        {ev.reading ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-1.5 text-[10px] text-muted-foreground"
+                            disabled={saving}
+                            title="Revertir a sin información"
+                            onClick={() => revert(s.id)}
+                          >
+                            Revertir
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
 
