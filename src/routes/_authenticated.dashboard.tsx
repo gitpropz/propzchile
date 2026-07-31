@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Eye, FileUp, Plus, TrendingDown, TrendingUp, Wallet, CalendarClock, CalendarX } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Eye, FileUp, Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import { ServicesSummaryStrip } from "@/components/services-summary-strip";
 import { UnitServicesIndicator } from "@/components/unit-services-indicator";
 import type { PropertyMonitoring } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
-import { evaluateLease, EXPIRY_WARNING_DAYS } from "@/lib/lease-expiry";
+import { evaluateLease } from "@/lib/lease-expiry";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address" | "comuna">;
@@ -199,6 +199,10 @@ function Dashboard() {
     return map;
   }, [allUnits]);
   const unrentedUnits = useMemo(() => allUnits.filter((u) => !u.rent_active), [allUnits]);
+  const propertyCount = useMemo(
+    () => new Set(allUnits.map((u) => u.properties?.id).filter(Boolean)).size,
+    [allUnits],
+  );
 
   // Contratos próximos a vencer o ya vencidos (sobre unidades arrendadas).
   const expiringContracts = useMemo(
@@ -444,12 +448,42 @@ function Dashboard() {
 
   const isCurrent = year === currentPeriod().year && month === currentPeriod().month;
 
+  // Excepciones del mes: solo lo que requiere acción.
+  const lateCount = useMemo(
+    () => rows.filter((r) => r.status === "late" || r.status === "warn").length,
+    [rows],
+  );
+  const attentionItems = useMemo(() => {
+    const items: {
+      key: string;
+      count: number;
+      label: string;
+      to: string;
+      hash?: string;
+      tone: "destructive" | "warning" | "muted";
+    }[] = [];
+    if (lateCount > 0)
+      items.push({ key: "late", count: lateCount, label: "arriendos atrasados", to: "/dashboard", hash: "unidades", tone: "destructive" });
+    if (servicesMonitor.counts.critical > 0)
+      items.push({ key: "svc-crit", count: servicesMonitor.counts.critical, label: "servicios críticos", to: "/services/update", tone: "destructive" });
+    if (servicesMonitor.counts.unknown > 0)
+      items.push({ key: "svc-unk", count: servicesMonitor.counts.unknown, label: "servicios sin información", to: "/services/update", tone: "muted" });
+    if (unrentedUnits.length > 0)
+      items.push({ key: "vacant", count: unrentedUnits.length, label: "propiedades vacantes", to: "/properties", tone: "warning" });
+    if (expiredCount > 0)
+      items.push({ key: "expired", count: expiredCount, label: "contratos vencidos", to: "/contracts", tone: "destructive" });
+    if (expiringSoonCount > 0)
+      items.push({ key: "expiring", count: expiringSoonCount, label: "contratos por vencer", to: "/contracts", tone: "warning" });
+    return items;
+  }, [lateCount, servicesMonitor.counts, unrentedUnits.length, expiredCount, expiringSoonCount]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 md:px-6 md:py-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Estado del Patrimonio Inmobiliario</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
+            {propertyCount} {propertyCount === 1 ? "propiedad" : "propiedades"} •{" "}
             {allUnits.length} {allUnits.length === 1 ? "unidad" : "unidades"} •{" "}
             {activeUnits.length} {activeUnits.length === 1 ? "arrendada" : "arrendadas"} •{" "}
             {unrentedUnits.length} {unrentedUnits.length === 1 ? "vacante" : "vacantes"}
@@ -485,10 +519,46 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Flujo del mes */}
-      <section className="mt-4 rounded-xl border border-border bg-card p-3">
-        <h2 className="text-sm font-semibold">Flujo del mes</h2>
-        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 lg:grid-cols-4">
+      {/* Flujo del mes — bloque principal, compacto */}
+      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <h2 className="text-sm font-semibold">Flujo del mes</h2>
+          {prev ? (
+            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              {deltaConfirmed >= 0 ? (
+                <TrendingUp className="h-3.5 w-3.5 text-success" />
+              ) : (
+                <TrendingDown className="h-3.5 w-3.5 text-destructive" />
+              )}
+              {deltaConfirmed >= 0 ? "+" : ""}
+              {formatCLP(deltaConfirmed)}
+              {deltaPct != null ? ` (${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%)` : ""}
+              {" vs "}
+              {shortPeriodLabel(prev.year, prev.month)}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-2 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2 text-[11px] text-muted-foreground">
+              <span>
+                Cobrado{" "}
+                <span className="font-semibold tabular-nums text-success">{formatCLP(totals.confirmed)}</span>{" "}
+                de <span className="tabular-nums text-foreground">{formatCLP(totals.expected)}</span>
+              </span>
+              <span className="text-base font-semibold tabular-nums text-foreground">{collectedPct}%</span>
+            </div>
+            <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-success transition-all"
+                style={{ width: `${Math.min(100, collectedPct)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border pt-2 sm:grid-cols-4">
           <FlowItem label="Esperado" value={formatCLP(totals.expected)} />
           <FlowItem label="Confirmado" value={formatCLP(totals.confirmed)} tone="success" />
           <FlowItem label="Pendiente" value={formatCLP(totals.pending)} />
@@ -498,76 +568,39 @@ function Dashboard() {
             tone={totals.overdue > 0 ? "destructive" : undefined}
           />
         </div>
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Cobrado</span>
-            <span className="font-medium tabular-nums text-foreground">{collectedPct}%</span>
-          </div>
-          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-success transition-all"
-              style={{ width: `${collectedPct}%` }}
-            />
-          </div>
-        </div>
       </section>
 
-
-      {unrentedUnits.length > 0 ? (
-        <Link
-          to="/properties"
-          className="mt-3 inline-flex items-center gap-2 rounded-full border border-warning/40 bg-warning/10 px-3 py-1.5 text-xs hover:bg-warning/15"
-        >
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />
-          <span className="font-medium text-foreground">
-            {unrentedUnits.length} {unrentedUnits.length === 1 ? "unidad" : "unidades"} PENDIENTES de arrendar
-          </span>
-          <span className="text-warning underline underline-offset-2">Ir a propiedades →</span>
-        </Link>
-      ) : null}
-
-      {expiringContracts.length > 0 ? (
-        <Link
-          to="/contracts"
-          className={`mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs hover:opacity-90 ${
-            expiredCount > 0
-              ? "border-destructive/40 bg-destructive/10"
-              : "border-warning/40 bg-warning/10 hover:bg-warning/15"
-          }`}
-        >
-          {expiredCount > 0 ? (
-            <CalendarX className="h-3.5 w-3.5 shrink-0 text-destructive" />
-          ) : (
-            <CalendarClock className="h-3.5 w-3.5 shrink-0 text-warning" />
-          )}
-          <span className="font-medium text-foreground">
-            {expiredCount > 0
-              ? `${expiredCount} ${expiredCount === 1 ? "contrato vencido" : "contratos vencidos"}`
-              : `${expiringSoonCount} ${expiringSoonCount === 1 ? "contrato por vencer" : "contratos por vencer"} en ${EXPIRY_WARNING_DAYS} días`}
-          </span>
-          <span className="underline underline-offset-2">Ver contratos →</span>
-        </Link>
-      ) : null}
-
-      {prev ? (
-        <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-          {deltaConfirmed >= 0 ? (
-            <TrendingUp className="h-4 w-4 text-success" />
-          ) : (
-            <TrendingDown className="h-4 w-4 text-destructive" />
-          )}
-          <span>
-            {deltaConfirmed >= 0 ? "+" : ""}
-            {formatCLP(deltaConfirmed)}
-            {deltaPct != null ? ` (${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%)` : ""}
-            {" vs "}
-            {shortPeriodLabel(prev.year, prev.month)}
-          </span>
-        </div>
-      ) : null}
+      {/* Requiere atención */}
+      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
+        <h2 className="text-sm font-semibold">Requiere atención</h2>
+        {attentionItems.length === 0 ? (
+          <p className="mt-1.5 text-xs text-muted-foreground">No existen alertas este mes.</p>
+        ) : (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {attentionItems.map((it) => (
+              <Link
+                key={it.key}
+                to={it.to}
+                hash={it.hash}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs hover:opacity-90",
+                  it.tone === "destructive"
+                    ? "border-destructive/40 bg-destructive/10"
+                    : it.tone === "warning"
+                      ? "border-warning/40 bg-warning/10"
+                      : "border-border bg-muted/40",
+                )}
+              >
+                <span className="font-semibold tabular-nums text-foreground">{it.count}</span>
+                <span className="text-muted-foreground">{it.label}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* 6-month comparison */}
-      <section className="mt-4 rounded-xl border border-border bg-card p-3">
+      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
         <h2 className="text-sm font-semibold">Comparativo últimos 6 meses</h2>
         <TrendChart data={trend} />
       </section>
@@ -582,7 +615,7 @@ function Dashboard() {
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
 
       {/* Rows */}
-      <section className="mt-4">
+      <section id="unidades" className="mt-3 scroll-mt-4">
         <div className="flex items-end justify-between">
           <h2 className="text-base font-semibold">Estado por unidad — {periodLabel(year, month)}</h2>
           <Link to="/properties" className="text-sm text-muted-foreground hover:text-foreground">
@@ -619,7 +652,7 @@ function Dashboard() {
             No hay unidades que coincidan con “{filter}”.
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredRows.map((r) => (
               <PaymentRow
                 key={r.unit.id}
@@ -693,7 +726,7 @@ function TrendChart({
         const confH = (d.confirmed / max) * 100;
         return (
           <div key={`${d.year}-${d.month}`} className="flex flex-col items-center gap-1">
-            <div className="relative flex h-20 w-full items-end gap-1">
+            <div className="relative flex h-14 w-full items-end gap-1">
               <div
                 className="w-1/2 rounded-t bg-muted"
                 style={{ height: `${expH}%` }}
