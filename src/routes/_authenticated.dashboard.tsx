@@ -448,6 +448,35 @@ function Dashboard() {
 
   const isCurrent = year === currentPeriod().year && month === currentPeriod().month;
 
+  // Excepciones del mes: solo lo que requiere acción.
+  const lateCount = useMemo(
+    () => rows.filter((r) => r.status === "late" || r.status === "warn").length,
+    [rows],
+  );
+  const attentionItems = useMemo(() => {
+    const items: {
+      key: string;
+      count: number;
+      label: string;
+      to: string;
+      hash?: string;
+      tone: "destructive" | "warning" | "muted";
+    }[] = [];
+    if (lateCount > 0)
+      items.push({ key: "late", count: lateCount, label: "arriendos atrasados", to: "/dashboard", hash: "unidades", tone: "destructive" });
+    if (servicesMonitor.counts.critical > 0)
+      items.push({ key: "svc-crit", count: servicesMonitor.counts.critical, label: "servicios críticos", to: "/services/update", tone: "destructive" });
+    if (servicesMonitor.counts.unknown > 0)
+      items.push({ key: "svc-unk", count: servicesMonitor.counts.unknown, label: "servicios sin información", to: "/services/update", tone: "muted" });
+    if (unrentedUnits.length > 0)
+      items.push({ key: "vacant", count: unrentedUnits.length, label: "propiedades vacantes", to: "/properties", tone: "warning" });
+    if (expiredCount > 0)
+      items.push({ key: "expired", count: expiredCount, label: "contratos vencidos", to: "/contracts", tone: "destructive" });
+    if (expiringSoonCount > 0)
+      items.push({ key: "expiring", count: expiringSoonCount, label: "contratos por vencer", to: "/contracts", tone: "warning" });
+    return items;
+  }, [lateCount, servicesMonitor.counts, unrentedUnits.length, expiredCount, expiringSoonCount]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 md:px-6 md:py-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
