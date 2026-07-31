@@ -726,7 +726,7 @@ function TrendChart({
         const confH = (d.confirmed / max) * 100;
         return (
           <div key={`${d.year}-${d.month}`} className="flex flex-col items-center gap-1">
-            <div className="relative flex h-20 w-full items-end gap-1">
+            <div className="relative flex h-14 w-full items-end gap-1">
               <div
                 className="w-1/2 rounded-t bg-muted"
                 style={{ height: `${expH}%` }}
