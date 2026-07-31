@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Eye, FileUp, Plus, TrendingDown, TrendingUp, Wallet, CalendarClock, CalendarX } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Eye, FileUp, Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import { ServicesSummaryStrip } from "@/components/services-summary-strip";
 import { UnitServicesIndicator } from "@/components/unit-services-indicator";
 import type { PropertyMonitoring } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
-import { evaluateLease, EXPIRY_WARNING_DAYS } from "@/lib/lease-expiry";
+import { evaluateLease } from "@/lib/lease-expiry";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address" | "comuna">;
