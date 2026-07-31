@@ -652,7 +652,7 @@ function Dashboard() {
             No hay unidades que coincidan con “{filter}”.
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredRows.map((r) => (
               <PaymentRow
                 key={r.unit.id}
