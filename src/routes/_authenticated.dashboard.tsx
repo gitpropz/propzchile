@@ -450,6 +450,7 @@ function Dashboard() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Estado del Patrimonio Inmobiliario</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
+            {propertyCount} {propertyCount === 1 ? "propiedad" : "propiedades"} •{" "}
             {allUnits.length} {allUnits.length === 1 ? "unidad" : "unidades"} •{" "}
             {activeUnits.length} {activeUnits.length === 1 ? "arrendada" : "arrendadas"} •{" "}
             {unrentedUnits.length} {unrentedUnits.length === 1 ? "vacante" : "vacantes"}
