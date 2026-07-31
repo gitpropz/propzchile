@@ -877,6 +877,16 @@ function PaymentRow({
           </SheetContent>
         </Sheet>
       </div>
+
+      {/* Servicios de la propiedad (solo unidad principal) */}
+      {monitoring && orgId ? (
+        <UnitServicesIndicator
+          organizationId={orgId}
+          monitoring={monitoring}
+          period={servicesPeriod}
+          onSaved={onServicesSaved}
+        />
+      ) : null}
     </Card>
   );
 }
