@@ -490,10 +490,46 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Flujo del mes */}
-      <section className="mt-4 rounded-xl border border-border bg-card p-3">
-        <h2 className="text-sm font-semibold">Flujo del mes</h2>
-        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 lg:grid-cols-4">
+      {/* Flujo del mes — bloque principal, compacto */}
+      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <h2 className="text-sm font-semibold">Flujo del mes</h2>
+          {prev ? (
+            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              {deltaConfirmed >= 0 ? (
+                <TrendingUp className="h-3.5 w-3.5 text-success" />
+              ) : (
+                <TrendingDown className="h-3.5 w-3.5 text-destructive" />
+              )}
+              {deltaConfirmed >= 0 ? "+" : ""}
+              {formatCLP(deltaConfirmed)}
+              {deltaPct != null ? ` (${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%)` : ""}
+              {" vs "}
+              {shortPeriodLabel(prev.year, prev.month)}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-2 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2 text-[11px] text-muted-foreground">
+              <span>
+                Cobrado{" "}
+                <span className="font-semibold tabular-nums text-success">{formatCLP(totals.confirmed)}</span>{" "}
+                de <span className="tabular-nums text-foreground">{formatCLP(totals.expected)}</span>
+              </span>
+              <span className="text-base font-semibold tabular-nums text-foreground">{collectedPct}%</span>
+            </div>
+            <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-success transition-all"
+                style={{ width: `${Math.min(100, collectedPct)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border pt-2 sm:grid-cols-4">
           <FlowItem label="Esperado" value={formatCLP(totals.expected)} />
           <FlowItem label="Confirmado" value={formatCLP(totals.confirmed)} tone="success" />
           <FlowItem label="Pendiente" value={formatCLP(totals.pending)} />
@@ -503,76 +539,39 @@ function Dashboard() {
             tone={totals.overdue > 0 ? "destructive" : undefined}
           />
         </div>
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Cobrado</span>
-            <span className="font-medium tabular-nums text-foreground">{collectedPct}%</span>
-          </div>
-          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-success transition-all"
-              style={{ width: `${collectedPct}%` }}
-            />
-          </div>
-        </div>
       </section>
 
-
-      {unrentedUnits.length > 0 ? (
-        <Link
-          to="/properties"
-          className="mt-3 inline-flex items-center gap-2 rounded-full border border-warning/40 bg-warning/10 px-3 py-1.5 text-xs hover:bg-warning/15"
-        >
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />
-          <span className="font-medium text-foreground">
-            {unrentedUnits.length} {unrentedUnits.length === 1 ? "unidad" : "unidades"} PENDIENTES de arrendar
-          </span>
-          <span className="text-warning underline underline-offset-2">Ir a propiedades →</span>
-        </Link>
-      ) : null}
-
-      {expiringContracts.length > 0 ? (
-        <Link
-          to="/contracts"
-          className={`mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs hover:opacity-90 ${
-            expiredCount > 0
-              ? "border-destructive/40 bg-destructive/10"
-              : "border-warning/40 bg-warning/10 hover:bg-warning/15"
-          }`}
-        >
-          {expiredCount > 0 ? (
-            <CalendarX className="h-3.5 w-3.5 shrink-0 text-destructive" />
-          ) : (
-            <CalendarClock className="h-3.5 w-3.5 shrink-0 text-warning" />
-          )}
-          <span className="font-medium text-foreground">
-            {expiredCount > 0
-              ? `${expiredCount} ${expiredCount === 1 ? "contrato vencido" : "contratos vencidos"}`
-              : `${expiringSoonCount} ${expiringSoonCount === 1 ? "contrato por vencer" : "contratos por vencer"} en ${EXPIRY_WARNING_DAYS} días`}
-          </span>
-          <span className="underline underline-offset-2">Ver contratos →</span>
-        </Link>
-      ) : null}
-
-      {prev ? (
-        <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-          {deltaConfirmed >= 0 ? (
-            <TrendingUp className="h-4 w-4 text-success" />
-          ) : (
-            <TrendingDown className="h-4 w-4 text-destructive" />
-          )}
-          <span>
-            {deltaConfirmed >= 0 ? "+" : ""}
-            {formatCLP(deltaConfirmed)}
-            {deltaPct != null ? ` (${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%)` : ""}
-            {" vs "}
-            {shortPeriodLabel(prev.year, prev.month)}
-          </span>
-        </div>
-      ) : null}
+      {/* Requiere atención */}
+      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
+        <h2 className="text-sm font-semibold">Requiere atención</h2>
+        {attentionItems.length === 0 ? (
+          <p className="mt-1.5 text-xs text-muted-foreground">No existen alertas este mes.</p>
+        ) : (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {attentionItems.map((it) => (
+              <Link
+                key={it.key}
+                to={it.to}
+                hash={it.hash}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs hover:opacity-90",
+                  it.tone === "destructive"
+                    ? "border-destructive/40 bg-destructive/10"
+                    : it.tone === "warning"
+                      ? "border-warning/40 bg-warning/10"
+                      : "border-border bg-muted/40",
+                )}
+              >
+                <span className="font-semibold tabular-nums text-foreground">{it.count}</span>
+                <span className="text-muted-foreground">{it.label}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* 6-month comparison */}
-      <section className="mt-4 rounded-xl border border-border bg-card p-3">
+      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
         <h2 className="text-sm font-semibold">Comparativo últimos 6 meses</h2>
         <TrendChart data={trend} />
       </section>
