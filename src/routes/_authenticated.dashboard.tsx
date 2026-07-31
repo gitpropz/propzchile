@@ -199,6 +199,10 @@ function Dashboard() {
     return map;
   }, [allUnits]);
   const unrentedUnits = useMemo(() => allUnits.filter((u) => !u.rent_active), [allUnits]);
+  const propertyCount = useMemo(
+    () => new Set(allUnits.map((u) => u.properties?.id).filter(Boolean)).size,
+    [allUnits],
+  );
 
   // Contratos próximos a vencer o ya vencidos (sobre unidades arrendadas).
   const expiringContracts = useMemo(
