@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCLP } from "@/lib/format";
-import { saveManualReading } from "@/lib/service-readings";
+import { deleteReading, saveManualReading } from "@/lib/service-readings";
 import {
   SERVICE_STATUS_META,
   formatMonthsDue,
@@ -60,6 +60,23 @@ export function UnitServicesIndicator({
       onSaved();
     } catch (e) {
       toast.error("No pudimos guardar el monto", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function revert(serviceId: string) {
+    setSaving(true);
+    try {
+      await deleteReading({ serviceId, period });
+      toast.success("Registro revertido", { description: "El servicio quedó sin información." });
+      setEditing(null);
+      setAmount("");
+      onSaved();
+    } catch (e) {
+      toast.error("No pudimos revertir el registro", {
         description: e instanceof Error ? e.message : String(e),
       });
     } finally {
@@ -130,6 +147,18 @@ export function UnitServicesIndicator({
                         >
                           {ev.reading ? "Editar" : "Ingresar"}
                         </Button>
+                        {ev.reading ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-1.5 text-[10px] text-muted-foreground"
+                            disabled={saving}
+                            title="Revertir a sin información"
+                            onClick={() => revert(s.id)}
+                          >
+                            Revertir
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
 

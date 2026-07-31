@@ -803,16 +803,6 @@ function PaymentRow({
         />
       </div>
 
-      {/* Servicios de la propiedad (solo unidad principal) */}
-      {monitoring && orgId ? (
-        <UnitServicesIndicator
-          organizationId={orgId}
-          monitoring={monitoring}
-          period={servicesPeriod}
-          onSaved={onServicesSaved}
-        />
-      ) : null}
-
       {/* Fila 3: Acciones */}
       <div className="flex items-center justify-between gap-1">
         <div className="flex min-w-0 flex-wrap items-center gap-1">
@@ -887,6 +877,16 @@ function PaymentRow({
           </SheetContent>
         </Sheet>
       </div>
+
+      {/* Servicios de la propiedad (solo unidad principal) */}
+      {monitoring && orgId ? (
+        <UnitServicesIndicator
+          organizationId={orgId}
+          monitoring={monitoring}
+          period={servicesPeriod}
+          onSaved={onServicesSaved}
+        />
+      ) : null}
     </Card>
   );
 }
