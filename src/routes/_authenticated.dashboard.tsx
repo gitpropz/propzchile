@@ -615,7 +615,7 @@ function Dashboard() {
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
 
       {/* Rows */}
-      <section className="mt-4">
+      <section id="unidades" className="mt-3 scroll-mt-4">
         <div className="flex items-end justify-between">
           <h2 className="text-base font-semibold">Estado por unidad — {periodLabel(year, month)}</h2>
           <Link to="/properties" className="text-sm text-muted-foreground hover:text-foreground">
