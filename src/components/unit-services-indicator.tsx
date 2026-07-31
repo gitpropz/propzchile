@@ -67,6 +67,23 @@ export function UnitServicesIndicator({
     }
   }
 
+  async function revert(serviceId: string) {
+    setSaving(true);
+    try {
+      await deleteReading({ serviceId, period });
+      toast.success("Registro revertido", { description: "El servicio quedó sin información." });
+      setEditing(null);
+      setAmount("");
+      onSaved();
+    } catch (e) {
+      toast.error("No pudimos revertir el registro", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <>
       <button
