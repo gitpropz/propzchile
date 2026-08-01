@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, Copy, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,12 +27,18 @@ type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
   head: () => ({ meta: [{ title: "Propiedad — Propz" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+    unit: typeof search.unit === "string" ? search.unit : undefined,
+  }),
   component: PropertyDetail,
 });
 
 function PropertyDetail() {
   const { id } = Route.useParams();
+  const { tab, unit: focusUnitId } = Route.useSearch();
   const navigate = useNavigate();
+
 
   const propertyQuery = useQuery({
     queryKey: ["property", id],
@@ -165,7 +171,7 @@ function PropertyDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="general" className="mt-8">
+      <Tabs defaultValue={tab === "units" || tab === "bills" ? tab : "general"} className="mt-8">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="units">Unidades ({unitsQuery.data?.length ?? 0})</TabsTrigger>
@@ -186,7 +192,7 @@ function PropertyDetail() {
         </TabsContent>
 
         <TabsContent value="units" className="pt-4">
-          <UnitsTab propertyId={id} organizationId={p.organization_id} units={unitsQuery.data ?? []} onChange={() => unitsQuery.refetch()} />
+          <UnitsTab propertyId={id} organizationId={p.organization_id} units={unitsQuery.data ?? []} focusUnitId={focusUnitId} onChange={() => unitsQuery.refetch()} />
         </TabsContent>
 
         <TabsContent value="bills" className="pt-4">
@@ -222,13 +228,16 @@ function UnitsTab({
   propertyId,
   organizationId,
   units,
+  focusUnitId,
   onChange,
 }: {
   propertyId: string;
   organizationId: string;
   units: Unit[];
+  focusUnitId?: string;
   onChange: () => void;
 }) {
+
   const [adding, setAdding] = useState(false);
   const [label, setLabel] = useState("");
   const [unitType, setUnitType] = useState<UnitType>("apartment");
@@ -288,6 +297,21 @@ function UnitsTab({
       rent_end_date: (u as any).rent_end_date ?? "",
     });
   }
+
+  const focusedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusUnitId || focusedRef.current === focusUnitId) return;
+    const target = units.find((u) => u.id === focusUnitId);
+    if (!target) return;
+    focusedRef.current = focusUnitId;
+    startEdit(target);
+    requestAnimationFrame(() => {
+      document.getElementById(`unit-${focusUnitId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusUnitId, units]);
+
+
 
   async function saveEdit(unitId: string) {
     if (!editDraft) return;
@@ -399,7 +423,7 @@ function UnitsTab({
           <ul className="divide-y divide-border">
             {units.map((u) =>
               editingId === u.id && editDraft ? (
-                <li key={u.id} className="px-5 py-4">
+                <li key={u.id} id={`unit-${u.id}`} className="px-5 py-4">
                   <div className="grid gap-3 md:grid-cols-6">
                     <div className="md:col-span-2 space-y-1.5">
                       <Label>Nombre</Label>
@@ -551,7 +575,7 @@ function UnitsTab({
                   </div>
                 </li>
               ) : (
-                <li key={u.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                <li key={u.id} id={`unit-${u.id}`} className="flex items-center justify-between gap-3 px-5 py-3">
                   <div>
                     <div className="font-medium">{u.label} {u.identifier ? <span className="text-muted-foreground">· {u.identifier}</span> : null}</div>
                     <div className="text-xs text-muted-foreground">
