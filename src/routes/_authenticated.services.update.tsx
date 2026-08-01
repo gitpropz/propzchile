@@ -129,13 +129,15 @@ function UpdateServicesPage() {
           for (const detected of result.services) {
             const match = matchDetectedService(
               {
-                identifier: detected.identifier ?? detected.meterNumber ?? detected.contractNumber,
+                identifier: detected.identifier,
+                identifiers: [detected.meterNumber, detected.contractNumber],
                 serviceType: detected.serviceType,
                 provider: detected.provider,
                 amount: detected.amountDue ?? 0,
               },
               services,
             );
+
             newRows.push({
               id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
               fileName: file.name,
@@ -323,11 +325,24 @@ function UpdateServicesPage() {
                     <div className="text-sm font-medium">
                       {r.detected.provider ?? "Proveedor desconocido"}
                       {r.detected.serviceType ? ` · ${serviceTypeLabel(r.detected.serviceType)}` : ""}
+                      {r.detected.noDebt ? (
+                        <span className="ml-2 rounded-full border border-success/30 bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success">
+                          Sin deuda
+                        </span>
+                      ) : null}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {r.detected.identifier ? `N° ${r.detected.identifier}` : "Sin identificador"} · {r.fileName}
                     </div>
+                    {!r.serviceId ? (
+                      <div className="mt-1 text-[11px] text-warning">
+                        {r.detected.identifier
+                          ? "El identificador no coincide con ningún servicio configurado. Asócialo manualmente."
+                          : "No leímos el número identificador. Asócialo manualmente."}
+                      </div>
+                    ) : null}
                   </div>
+
                   <div className="space-y-1 md:col-span-4">
                     <Label className="text-xs">Servicio de la propiedad</Label>
                     <Select

@@ -279,6 +279,8 @@ export function computeCoverage(
 
 export type DetectedService = {
   identifier?: string | null;
+  /** Otros números leídos del documento (medidor, contrato, rol). */
+  identifiers?: (string | null | undefined)[];
   serviceType?: string | null;
   provider?: string | null;
   amount: number;
@@ -290,38 +292,42 @@ export type DetectedService = {
 export type DetectedMatch = {
   detected: DetectedService;
   service: MonitoredService | null;
-  reason: "identifier" | "type_provider" | "type_unique" | "none";
+  reason: "identifier" | "none";
 };
 
+/** Mínimo de dígitos para aceptar una coincidencia parcial (sufijo). */
+const MIN_PARTIAL_IDENTIFIER_LENGTH = 5;
+
+function identifierMatches(configured: string, candidate: string): boolean {
+  if (!configured || !candidate) return false;
+  if (configured === candidate) return true;
+  const shortest = Math.min(configured.length, candidate.length);
+  if (shortest < MIN_PARTIAL_IDENTIFIER_LENGTH) return false;
+  return configured.endsWith(candidate) || candidate.endsWith(configured);
+}
+
 /**
- * Asocia un servicio detectado en un documento con la configuración de una
- * propiedad, usando el identificador (número de cliente/medidor/contrato) y,
- * como respaldo, el tipo de servicio + proveedor.
+ * Asocia un servicio detectado con la configuración de la propiedad usando
+ * ESTRICTAMENTE el número identificador (cliente/medidor/contrato/rol).
+ * El proveedor, el alias y el vencimiento son solo información de apoyo: no
+ * generan asociación por sí solos.
  */
 export function matchDetectedService(
   detected: DetectedService,
   services: MonitoredService[],
 ): DetectedMatch {
   const active = services.filter((s) => s.active);
-  const id = normalizeServiceIdentifier(detected.identifier);
-  if (id) {
-    const hit = active.find((s) => {
-      const conf = normalizeServiceIdentifier(s.service_identifier);
-      return conf.length > 0 && (conf === id || id.endsWith(conf) || conf.endsWith(id));
-    });
-    if (hit) return { detected, service: hit, reason: "identifier" };
-  }
-  if (detected.serviceType) {
-    const sameType = active.filter((s) => s.service_type === detected.serviceType);
-    if (detected.provider) {
-      const p = detected.provider.toLocaleLowerCase("es").trim();
-      const hit = sameType.find((s) => {
-        const sp = (s.provider ?? "").toLocaleLowerCase("es").trim();
-        return sp.length > 0 && (sp === p || sp.includes(p) || p.includes(sp));
-      });
-      if (hit) return { detected, service: hit, reason: "type_provider" };
-    }
-    if (sameType.length === 1) return { detected, service: sameType[0], reason: "type_unique" };
-  }
+  const candidates = [detected.identifier, ...(detected.identifiers ?? [])]
+    .map((v) => normalizeServiceIdentifier(v))
+    .filter((v) => v.length > 0);
+  if (candidates.length === 0) return { detected, service: null, reason: "none" };
+
+  const hits = active.filter((s) => {
+    const conf = normalizeServiceIdentifier(s.service_identifier);
+    return conf.length > 0 && candidates.some((c) => identifierMatches(conf, c));
+  });
+  // Exigimos una única coincidencia: si hay ambigüedad, se revisa a mano.
+  if (hits.length === 1) return { detected, service: hits[0], reason: "identifier" };
   return { detected, service: null, reason: "none" };
 }
+
