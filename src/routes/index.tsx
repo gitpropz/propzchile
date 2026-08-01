@@ -132,13 +132,17 @@ function Index() {
       </section>
 
       <footer className="border-t border-border bg-surface py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 text-center sm:px-6">
-          <PropzLogo markClassName="h-7 w-7" wordmarkClassName="text-[1.5rem]" tagline />
-          <p className="text-xs text-muted-foreground">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-5 text-center sm:px-6">
+          <PropzLogo markClassName="h-7 w-7" wordmarkClassName="text-[1.5rem]" />
+          <p className="text-[0.6875rem] leading-tight text-muted-foreground">
+            Todo tu patrimonio inmobiliario en un solo lugar
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
             © {new Date().getFullYear()} Propz · Tecnología para inversionistas inmobiliarios
           </p>
         </div>
       </footer>
+
     </div>
   );
 }
