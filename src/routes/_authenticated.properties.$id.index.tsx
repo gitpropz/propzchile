@@ -192,7 +192,7 @@ function PropertyDetail() {
         </TabsContent>
 
         <TabsContent value="units" className="pt-4">
-          <UnitsTab propertyId={id} organizationId={p.organization_id} units={unitsQuery.data ?? []} onChange={() => unitsQuery.refetch()} />
+          <UnitsTab propertyId={id} organizationId={p.organization_id} units={unitsQuery.data ?? []} focusUnitId={focusUnitId} onChange={() => unitsQuery.refetch()} />
         </TabsContent>
 
         <TabsContent value="bills" className="pt-4">
