@@ -27,12 +27,18 @@ type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
   head: () => ({ meta: [{ title: "Propiedad — Propz" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+    unit: typeof search.unit === "string" ? search.unit : undefined,
+  }),
   component: PropertyDetail,
 });
 
 function PropertyDetail() {
   const { id } = Route.useParams();
+  const { tab, unit: focusUnitId } = Route.useSearch();
   const navigate = useNavigate();
+
 
   const propertyQuery = useQuery({
     queryKey: ["property", id],
