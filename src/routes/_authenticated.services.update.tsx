@@ -129,13 +129,15 @@ function UpdateServicesPage() {
           for (const detected of result.services) {
             const match = matchDetectedService(
               {
-                identifier: detected.identifier ?? detected.meterNumber ?? detected.contractNumber,
+                identifier: detected.identifier,
+                identifiers: [detected.meterNumber, detected.contractNumber],
                 serviceType: detected.serviceType,
                 provider: detected.provider,
                 amount: detected.amountDue ?? 0,
               },
               services,
             );
+
             newRows.push({
               id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
               fileName: file.name,
