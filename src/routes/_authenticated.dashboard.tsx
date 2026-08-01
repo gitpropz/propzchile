@@ -846,9 +846,14 @@ function PaymentRow({
           ) : null}
 
           {status === "inactive" ? (
-            <Link to="/properties">
+            <Link
+              to="/properties/$id"
+              params={{ id: property?.id ?? unit.property_id }}
+              search={{ tab: "units", unit: unit.id }}
+            >
               <Button variant="outline" size="sm" className="h-7 px-2 text-xs">Asignar</Button>
             </Link>
+
           ) : (
             <>
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onEditAmount} title="Editar monto abonado">
