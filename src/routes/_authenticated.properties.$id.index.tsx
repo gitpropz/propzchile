@@ -298,6 +298,21 @@ function UnitsTab({
     });
   }
 
+  const focusedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusUnitId || focusedRef.current === focusUnitId) return;
+    const target = units.find((u) => u.id === focusUnitId);
+    if (!target) return;
+    focusedRef.current = focusUnitId;
+    startEdit(target);
+    requestAnimationFrame(() => {
+      document.getElementById(`unit-${focusUnitId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusUnitId, units]);
+
+
+
   async function saveEdit(unitId: string) {
     if (!editDraft) return;
     const day = editDraft.payment_day ? Number(editDraft.payment_day) : null;
