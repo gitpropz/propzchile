@@ -62,17 +62,25 @@ function parseServices(text: string): ExtractedService[] {
       : typeof s.amountDue === "string"
         ? Number(String(s.amountDue).replace(/[^\d-]/g, ""))
         : null;
+    const statusText = typeof s.status === "string" ? s.status.toLocaleLowerCase("es") : "";
+    const noDebt =
+      s.noDebt === true ||
+      amount === 0 ||
+      /sin deuda|sin cuentas|al d[ií]a|no registra deuda|sin saldo/.test(statusText);
+    const normalizedAmount = amount != null && Number.isFinite(amount) ? amount : null;
     return {
       provider: (s.provider as string) ?? null,
       serviceType: (s.serviceType as ExtractedService["serviceType"]) ?? null,
       identifier: (s.identifier as string) ?? null,
       meterNumber: (s.meterNumber as string) ?? null,
       contractNumber: (s.contractNumber as string) ?? null,
-      amountDue: amount != null && Number.isFinite(amount) ? amount : null,
+      amountDue: noDebt ? 0 : normalizedAmount,
+      noDebt,
       date: (s.date as string) ?? null,
       status: (s.status as string) ?? null,
     };
   });
+
 }
 
 export async function extractServicesFromDocument(
