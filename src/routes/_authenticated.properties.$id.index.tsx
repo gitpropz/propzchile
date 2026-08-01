@@ -171,7 +171,7 @@ function PropertyDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="general" className="mt-8">
+      <Tabs defaultValue={tab === "units" || tab === "bills" ? tab : "general"} className="mt-8">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="units">Unidades ({unitsQuery.data?.length ?? 0})</TabsTrigger>
