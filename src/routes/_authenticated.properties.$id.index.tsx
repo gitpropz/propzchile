@@ -228,13 +228,16 @@ function UnitsTab({
   propertyId,
   organizationId,
   units,
+  focusUnitId,
   onChange,
 }: {
   propertyId: string;
   organizationId: string;
   units: Unit[];
+  focusUnitId?: string;
   onChange: () => void;
 }) {
+
   const [adding, setAdding] = useState(false);
   const [label, setLabel] = useState("");
   const [unitType, setUnitType] = useState<UnitType>("apartment");
