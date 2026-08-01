@@ -423,7 +423,7 @@ function UnitsTab({
           <ul className="divide-y divide-border">
             {units.map((u) =>
               editingId === u.id && editDraft ? (
-                <li key={u.id} className="px-5 py-4">
+                <li key={u.id} id={`unit-${u.id}`} className="px-5 py-4">
                   <div className="grid gap-3 md:grid-cols-6">
                     <div className="md:col-span-2 space-y-1.5">
                       <Label>Nombre</Label>
@@ -575,7 +575,7 @@ function UnitsTab({
                   </div>
                 </li>
               ) : (
-                <li key={u.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                <li key={u.id} id={`unit-${u.id}`} className="flex items-center justify-between gap-3 px-5 py-3">
                   <div>
                     <div className="font-medium">{u.label} {u.identifier ? <span className="text-muted-foreground">· {u.identifier}</span> : null}</div>
                     <div className="text-xs text-muted-foreground">
