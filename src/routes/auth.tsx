@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { PasswordInput } from "@/components/password-input";
 import { PropzLogo } from "@/components/propz-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -37,9 +40,17 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-surface px-4 py-10">
       <div className="w-full max-w-md">
+        <Link
+          to="/"
+          className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-propz hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Volver al inicio
+        </Link>
         <Link to="/" className="mb-8 flex items-center justify-center text-foreground">
           <PropzLogo wordmarkClassName="text-[2rem]" markClassName="h-9 w-9" />
         </Link>
+
+
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
 
@@ -78,6 +89,7 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [forgot, setForgot] = useState(false);
 
   async function handle(e: React.FormEvent) {
     e.preventDefault();
@@ -91,6 +103,44 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
     onSuccess();
   }
 
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("No pudimos enviar el correo", { description: error.message });
+      return;
+    }
+    toast.success("Te enviamos un enlace para recuperar tu contraseña");
+  }
+
+  if (forgot) {
+    return (
+      <form onSubmit={handleReset} className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Ingresa tu email y te enviaremos un enlace para crear una nueva contraseña.
+        </p>
+        <div className="space-y-1.5">
+          <Label htmlFor="reset-email">Email</Label>
+          <Input id="reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+        </div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Enviando..." : "Enviar enlace"}
+        </Button>
+        <button
+          type="button"
+          onClick={() => setForgot(false)}
+          className="w-full cursor-pointer text-center text-xs text-muted-foreground transition-propz hover:text-foreground"
+        >
+          Volver a iniciar sesión
+        </button>
+      </form>
+    );
+  }
+
   return (
     <form onSubmit={handle} className="space-y-4">
       <div className="space-y-1.5">
@@ -98,8 +148,17 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
         <Input id="signin-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="signin-password">Contraseña</Label>
-        <Input id="signin-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="signin-password">Contraseña</Label>
+          <button
+            type="button"
+            onClick={() => setForgot(true)}
+            className="cursor-pointer text-xs font-medium text-muted-foreground transition-propz hover:text-foreground"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
+        <PasswordInput id="signin-password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Ingresando..." : "Iniciar sesión"}
@@ -107,6 +166,7 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
     </form>
   );
 }
+
 
 function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
   const [fullName, setFullName] = useState("");
@@ -166,7 +226,7 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="su-password">Contraseña</Label>
-        <Input id="su-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+        <PasswordInput id="su-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Creando cuenta..." : "Crear cuenta"}
