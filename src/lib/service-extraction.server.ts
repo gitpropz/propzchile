@@ -13,6 +13,8 @@ export type ExtractedService = {
   meterNumber: string | null;
   contractNumber: string | null;
   amountDue: number | null;
+  /** true cuando el documento indica explícitamente que no hay deuda. */
+  noDebt?: boolean;
   date: string | null;
   status: string | null;
 };
@@ -22,13 +24,22 @@ const MODELS = ["google/gemini-3-flash", "google/gemini-2.5-flash"];
 
 const SYSTEM_PROMPT = `Eres un asistente que lee documentos chilenos de pago de servicios
 (pantallazos de Servipag, boletas de agua/luz/gas, avisos de gastos comunes).
-Extrae TODOS los servicios listados en el documento.
+Extrae TODOS los servicios listados en el documento, una entrada por cada tarjeta/fila.
 Responde SOLO un JSON con la forma:
-{"services":[{"provider":string|null,"serviceType":"agua"|"luz"|"gas"|"gastos_comunes"|"otro"|null,"identifier":string|null,"meterNumber":string|null,"contractNumber":string|null,"amountDue":number|null,"date":"YYYY-MM-DD"|null,"status":string|null}]}
+{"services":[{"provider":string|null,"serviceType":"agua"|"luz"|"gas"|"gastos_comunes"|"otro"|null,"identifier":string|null,"meterNumber":string|null,"contractNumber":string|null,"amountDue":number|null,"noDebt":boolean,"date":"YYYY-MM-DD"|null,"status":string|null}]}
 Reglas:
+- identifier es EL DATO MÁS IMPORTANTE: el número identificador de la cuenta
+  (número de cliente/servicio/medidor/contrato/rol). En los pantallazos de Servipag
+  normalmente aparece en la TERCERA línea de cada tarjeta, bajo el nombre de la
+  compañía y el alias/dirección. Cópialo tal cual aparece, completo, sin recortar
+  dígitos ni agregar texto. Si no aparece, usa null (no lo inventes ni lo deduzcas).
 - amountDue es el monto adeudado o total a pagar en pesos chilenos, como número sin puntos ni símbolos.
-- identifier es el número de cliente/servicio/rol que identifica la cuenta.
+- Si la tarjeta indica que NO hay deuda ("sin deuda", "sin cuentas pendientes",
+  "al día", "no registra deuda", "$0"), devuelve amountDue: 0 y noDebt: true.
+- Si hay deuda, noDebt: false.
+- provider (compañía), alias/dirección y fecha de vencimiento son información de apoyo.
 - Si un dato no aparece, usa null. No inventes datos.`;
+
 
 function contentBlock(file: { name: string; mimeType: string; dataUrl: string }) {
   if (file.mimeType.startsWith("image/")) {
