@@ -226,7 +226,7 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="su-password">Contraseña</Label>
-        <Input id="su-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+        <PasswordInput id="su-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Creando cuenta..." : "Crear cuenta"}
