@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
@@ -41,6 +45,7 @@ function NewProperty() {
   const [notes, setNotes] = useState("");
   const [units, setUnits] = useState<UnitDraft[]>([{ ...emptyUnit(), label: "Unidad principal" }]);
   const [saving, setSaving] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   function updateUnit(idx: number, patch: Partial<UnitDraft>) {
     setUnits((u) => u.map((unit, i) => (i === idx ? { ...unit, ...patch } : unit)));
@@ -50,6 +55,13 @@ function NewProperty() {
     e.preventDefault();
     if (!org.data?.organization_id) {
       toast.error("No encontramos tu organización");
+      return;
+    }
+    const validUnits = units.filter((u) => u.label.trim().length > 0);
+    if (validUnits.length === 0) {
+      toast.error("Agrega al menos una unidad arrendable", {
+        description: "Cada propiedad necesita al menos una unidad (depto, casa, estacionamiento, etc.).",
+      });
       return;
     }
     setSaving(true);
@@ -75,8 +87,7 @@ function NewProperty() {
       return;
     }
 
-    const unitsToInsert = units
-      .filter((u) => u.label.trim().length > 0)
+    const unitsToInsert = validUnits
       .map((u) => ({
         property_id: property.id,
         organization_id: org.data!.organization_id,
@@ -96,8 +107,9 @@ function NewProperty() {
       }
     }
 
-    toast.success("Propiedad creada");
-    navigate({ to: "/properties/$id", params: { id: property.id } });
+    setSaving(false);
+    toast.success("Propiedad y unidades creadas");
+    setCreatedId(property.id);
   }
 
   return (
@@ -228,6 +240,42 @@ function NewProperty() {
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={createdId != null}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Registrar cuentas para monitorear?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Puedes configurar ahora las cuentas de servicios (luz, agua, gas, gastos comunes) de esta
+              propiedad para que Propz detecte deudas automáticamente. También puedes hacerlo más tarde.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() =>
+                navigate({
+                  to: "/properties/$id",
+                  params: { id: createdId! },
+                  search: { tab: "units" },
+                })
+              }
+            >
+              Más tarde
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                navigate({
+                  to: "/properties/$id",
+                  params: { id: createdId! },
+                  search: { tab: "bills" },
+                })
+              }
+            >
+              Sí, registrar cuentas
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
