@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MonitoredServicesPanel } from "@/components/monitored-services-panel";
 import { UNIT_TYPE_LABELS, UNIT_TYPE_OPTIONS, CURRENCY_OPTIONS, type UnitType, type Currency } from "@/lib/property-types";
 import { formatMoney } from "@/lib/format";
-import { evaluateLease, leaseDaysLabel, LEASE_STATUS_META } from "@/lib/lease-expiry";
+import { evaluateLease, leaseDaysLabel, LEASE_STATUS_META, addOneYear } from "@/lib/lease-expiry";
 import type { Database } from "@/integrations/supabase/types";
 
 type Property = Database["public"]["Tables"]["properties"]["Row"];
