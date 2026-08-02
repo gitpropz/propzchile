@@ -111,3 +111,18 @@ export function leaseDaysLabel(daysLeft: number | null): string {
   if (abs < 30) return `Vencido hace ${abs} días`;
   return `Vencido hace ${Math.round(abs / 30)} meses`;
 }
+
+/**
+ * Devuelve la fecha (YYYY-MM-DD) un año después de la fecha dada.
+ * Se usa para prellenar el término del contrato al ingresar el inicio.
+ */
+export function addOneYear(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return "";
+  const y = Number(m[1]) + 1;
+  const d = new Date(y, Number(m[2]) - 1, Number(m[3]));
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mo}-${day}`;
+}
