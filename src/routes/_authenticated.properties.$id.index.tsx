@@ -677,32 +677,50 @@ function UnitsTab({
                 Arrendada actualmente
               </label>
             </div>
-            <div className="grid gap-3 md:grid-cols-6">
-              <div className="md:col-span-2 space-y-1.5">
-                <Label>Día de pago (1–28)</Label>
-                <Input type="number" min={1} max={28} value={paymentDay} onChange={(e) => setPaymentDay(e.target.value)} />
+            <div className="grid gap-2 md:grid-cols-4">
+              <div className="space-y-1">
+                <Label className="text-xs">Día de pago (1–28)</Label>
+                <Input className="h-9" type="number" min={1} max={28} value={paymentDay} onChange={(e) => setPaymentDay(e.target.value)} />
               </div>
-              <div className="md:col-span-2 space-y-1.5">
-                <Label>Arrendatario</Label>
-                <Input value={tenantName} onChange={(e) => setTenantName(e.target.value)} />
+              <div className="space-y-1">
+                <Label className="text-xs">Arrendatario</Label>
+                <Input className="h-9" value={tenantName} onChange={(e) => setTenantName(e.target.value)} />
               </div>
-              <div className="md:col-span-2 space-y-1.5">
-                <Label>Contacto</Label>
-                <Input value={tenantContact} onChange={(e) => setTenantContact(e.target.value)} placeholder="Teléfono / WhatsApp" />
+              <div className="space-y-1">
+                <Label className="text-xs">Inicio del contrato</Label>
+                <Input
+                  className="h-9"
+                  type="date"
+                  value={rentStart}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    const auto = addOneYear(rentStart);
+                    setRentStart(next);
+                    setRentEnd(rentEnd && rentEnd !== auto ? rentEnd : addOneYear(next));
+                  }}
+                />
               </div>
-              <div className="md:col-span-3 space-y-1.5">
-                <Label>Email del arrendatario</Label>
-                <Input type="email" value={tenantEmail} onChange={(e) => setTenantEmail(e.target.value)} placeholder="nombre@correo.cl" />
+              <div className="space-y-1">
+                <Label className="text-xs">Término del contrato</Label>
+                <Input className="h-9" type="date" value={rentEnd} onChange={(e) => setRentEnd(e.target.value)} />
               </div>
-              <div className="md:col-span-3 space-y-1.5">
-                <Label>RUT del arrendatario</Label>
-                <Input value={tenantRut} onChange={(e) => setTenantRut(e.target.value)} placeholder="12.345.678-9" />
+              <div className="space-y-1 md:col-span-2">
+                <Label className="text-xs">Contacto</Label>
+                <Input className="h-9" value={tenantContact} onChange={(e) => setTenantContact(e.target.value)} placeholder="Teléfono / WhatsApp" />
               </div>
-              <div className="md:col-span-3 space-y-1.5">
-                <Label>Inicio del contrato</Label>
-                <Input type="date" value={rentStart} onChange={(e) => setRentStart(e.target.value)} />
+              <div className="space-y-1">
+                <Label className="text-xs">Email del arrendatario</Label>
+                <Input className="h-9" type="email" value={tenantEmail} onChange={(e) => setTenantEmail(e.target.value)} placeholder="nombre@correo.cl" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">RUT del arrendatario</Label>
+                <Input className="h-9" value={tenantRut} onChange={(e) => setTenantRut(e.target.value)} placeholder="12.345.678-9" />
               </div>
             </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Término vacío = arriendo indefinido. Por defecto se propone 1 año desde el inicio.
+            </p>
+
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setAdding(false)}>Cancelar</Button>
