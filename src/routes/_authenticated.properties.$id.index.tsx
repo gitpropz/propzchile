@@ -456,10 +456,10 @@ function UnitsTab({
                       </Select>
                     </div>
                   </div>
-                  <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4">
-                    <div className="mb-3 flex items-center justify-between">
+                  <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-3">
                       <h4 className="text-sm font-semibold">Condiciones del arriendo</h4>
-                      <label className="flex items-center gap-2 text-sm">
+                      <label className="flex items-center gap-2 text-xs">
                         <Checkbox
                           checked={editDraft.rent_active}
                           onCheckedChange={(v) => setEditDraft({ ...editDraft, rent_active: v === true })}
@@ -467,10 +467,11 @@ function UnitsTab({
                         Arrendada actualmente
                       </label>
                     </div>
-                    <div className="grid gap-3 md:grid-cols-6">
-                      <div className="md:col-span-2 space-y-1.5">
-                        <Label>Día de pago (1–28)</Label>
+                    <div className="grid gap-2 md:grid-cols-4">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Día de pago (1–28)</Label>
                         <Input
+                          className="h-9"
                           type="number"
                           min={1}
                           max={28}
@@ -478,93 +479,114 @@ function UnitsTab({
                           onChange={(e) => setEditDraft({ ...editDraft, payment_day: e.target.value })}
                         />
                       </div>
-                      <div className="md:col-span-2 space-y-1.5">
-                        <Label>Arrendatario</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Arrendatario</Label>
                         <Input
+                          className="h-9"
                           value={editDraft.tenant_name}
                           onChange={(e) => setEditDraft({ ...editDraft, tenant_name: e.target.value })}
                         />
                       </div>
-                      <div className="md:col-span-2 space-y-1.5">
-                        <Label>Contacto</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Inicio del contrato</Label>
                         <Input
+                          className="h-9"
+                          type="date"
+                          value={editDraft.rent_start_date}
+                          onChange={(e) => {
+                            const nextStart = e.target.value;
+                            const auto = addOneYear(editDraft.rent_start_date);
+                            const keepEnd =
+                              editDraft.rent_end_date && editDraft.rent_end_date !== auto
+                                ? editDraft.rent_end_date
+                                : addOneYear(nextStart);
+                            setEditDraft({ ...editDraft, rent_start_date: nextStart, rent_end_date: keepEnd });
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Término del contrato</Label>
+                        <Input
+                          className="h-9"
+                          type="date"
+                          value={editDraft.rent_end_date}
+                          onChange={(e) => setEditDraft({ ...editDraft, rent_end_date: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1 md:col-span-2">
+                        <Label className="text-xs">Contacto</Label>
+                        <Input
+                          className="h-9"
                           value={editDraft.tenant_contact}
                           onChange={(e) => setEditDraft({ ...editDraft, tenant_contact: e.target.value })}
                           placeholder="Teléfono / WhatsApp"
                         />
                       </div>
-                      <div className="md:col-span-3 space-y-1.5">
-                        <Label>Email del arrendatario</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Email del arrendatario</Label>
                         <Input
+                          className="h-9"
                           type="email"
                           value={editDraft.tenant_email}
                           onChange={(e) => setEditDraft({ ...editDraft, tenant_email: e.target.value })}
                           placeholder="nombre@correo.cl"
                         />
                       </div>
-                      <div className="md:col-span-3 space-y-1.5">
-                        <Label>RUT del arrendatario</Label>
+                      <div className="space-y-1">
+                        <Label className="text-xs">RUT del arrendatario</Label>
                         <Input
+                          className="h-9"
                           value={editDraft.tenant_rut}
                           onChange={(e) => setEditDraft({ ...editDraft, tenant_rut: e.target.value })}
                           placeholder="12.345.678-9"
                         />
                       </div>
-                      <div className="md:col-span-6 space-y-1.5">
-                        <Label>RUT adicionales autorizados (uno por línea)</Label>
-                        <textarea
-                          className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          value={editDraft.tenant_ruts}
-                          onChange={(e) => setEditDraft({ ...editDraft, tenant_ruts: e.target.value })}
-                          placeholder={"12.345.678-9\n9.876.543-2"}
-                        />
-                        <p className="text-xs text-muted-foreground">Se sumarán todos los abonos de estos RUT al conciliar cartolas.</p>
-                      </div>
-                      <div className="md:col-span-3 space-y-1.5">
-                        <Label>Nombres y alias del pagador (uno por línea)</Label>
-                        <textarea
-                          className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          value={editDraft.tenant_aliases}
-                          onChange={(e) => setEditDraft({ ...editDraft, tenant_aliases: e.target.value })}
-                          placeholder={"Juan Pérez\nJ. Pérez Soto"}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Útil para bancos que no informan RUT (ej. Banco de Chile).
-                        </p>
-                      </div>
-                      <div className="md:col-span-3 space-y-1.5">
-                        <Label>Cuentas de origen del pagador (una por línea)</Label>
-                        <textarea
-                          className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                          value={editDraft.tenant_account_numbers}
-                          onChange={(e) =>
-                            setEditDraft({ ...editDraft, tenant_account_numbers: e.target.value })
-                          }
-                          placeholder={"000123456789\n987654321"}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Se usan para identificar depósitos sin RUT ni nombre reconocible.
-                        </p>
-                      </div>
-                      <div className="md:col-span-3 space-y-1.5">
-                        <Label>Inicio del contrato</Label>
-                        <Input
-                          type="date"
-                          value={editDraft.rent_start_date}
-                          onChange={(e) => setEditDraft({ ...editDraft, rent_start_date: e.target.value })}
-                        />
-                      </div>
-                      <div className="md:col-span-3 space-y-1.5">
-                        <Label>Término del contrato</Label>
-                        <Input
-                          type="date"
-                          value={editDraft.rent_end_date}
-                          onChange={(e) => setEditDraft({ ...editDraft, rent_end_date: e.target.value })}
-                        />
-                        <p className="text-xs text-muted-foreground">Deja vacío para arriendo indefinido. Se usa para alertar vencimientos.</p>
-                      </div>
                     </div>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Término vacío = arriendo indefinido. Por defecto se propone 1 año desde el inicio.
+                    </p>
+
+                    <details className="mt-3 rounded-md border border-border bg-background/60 p-2.5">
+                      <summary className="cursor-pointer text-xs font-medium">
+                        Datos para conciliar cartolas (RUT, alias y cuentas)
+                      </summary>
+                      <div className="mt-2 grid gap-2 md:grid-cols-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">RUT adicionales (uno por línea)</Label>
+                          <textarea
+                            className="min-h-[60px] w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-xs"
+                            value={editDraft.tenant_ruts}
+                            onChange={(e) => setEditDraft({ ...editDraft, tenant_ruts: e.target.value })}
+                            placeholder={"12.345.678-9\n9.876.543-2"}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Nombres y alias del pagador</Label>
+                          <textarea
+                            className="min-h-[60px] w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-xs"
+                            value={editDraft.tenant_aliases}
+                            onChange={(e) => setEditDraft({ ...editDraft, tenant_aliases: e.target.value })}
+                            placeholder={"Juan Pérez\nJ. Pérez Soto"}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Cuentas de origen del pagador</Label>
+                          <textarea
+                            className="min-h-[60px] w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-xs"
+                            value={editDraft.tenant_account_numbers}
+                            onChange={(e) =>
+                              setEditDraft({ ...editDraft, tenant_account_numbers: e.target.value })
+                            }
+                            placeholder={"000123456789\n987654321"}
+                          />
+                        </div>
+                      </div>
+                      <p className="mt-1.5 text-[11px] text-muted-foreground">
+                        Se usan para identificar depósitos sin RUT ni nombre reconocible.
+                      </p>
+                    </details>
                   </div>
+
                   <div className="mt-3 flex justify-end gap-2">
                     <Button type="button" variant="ghost" size="sm" onClick={() => { setEditingId(null); setEditDraft(null); }}>
                       <X className="mr-1 h-4 w-4" /> Cancelar
