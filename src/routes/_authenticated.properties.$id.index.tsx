@@ -251,6 +251,7 @@ function UnitsTab({
   const [tenantRut, setTenantRut] = useState("");
   const [rentActive, setRentActive] = useState(false);
   const [rentStart, setRentStart] = useState("");
+  const [rentEnd, setRentEnd] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const splitList = (s: string) =>
     s
@@ -373,6 +374,7 @@ function UnitsTab({
       tenant_rut: tenantRut || null,
       rent_active: rentActive,
       rent_start_date: rentStart || null,
+      rent_end_date: rentEnd || null,
     } as any);
     if (error) {
       toast.error("No pudimos agregar la unidad", { description: error.message });
@@ -380,7 +382,7 @@ function UnitsTab({
     }
     toast.success("Unidad agregada");
     setLabel(""); setIdentifier(""); setRent(""); setUnitType("apartment"); setCurrency("CLP");
-    setPaymentDay("5"); setTenantName(""); setTenantContact(""); setTenantEmail(""); setRentActive(false); setRentStart("");
+    setPaymentDay("5"); setTenantName(""); setTenantContact(""); setTenantEmail(""); setRentActive(false); setRentStart(""); setRentEnd("");
     setTenantRut("");
     setAdding(false);
     onChange();
@@ -399,6 +401,7 @@ function UnitsTab({
       setTenantRut((base as any).tenant_rut ?? "");
       setRentActive(!!base.rent_active);
       setRentStart(base.rent_start_date ?? "");
+      setRentEnd((base as any).rent_end_date ?? addOneYear(base.rent_start_date));
     }
     setAdding(true);
   }
