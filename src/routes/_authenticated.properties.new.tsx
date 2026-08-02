@@ -164,7 +164,7 @@ function NewProperty() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold">Unidades arrendables</h2>
-              <p className="text-sm text-muted-foreground">Departamento, estacionamiento, bodega, etc.</p>
+              <p className="text-sm text-muted-foreground">Obligatorio: registra al menos una unidad (departamento, estacionamiento, bodega, etc.).</p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={() => setUnits((u) => [...u, emptyUnit()])}>
               <Plus className="mr-2 h-4 w-4" /> Agregar unidad
