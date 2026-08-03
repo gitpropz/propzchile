@@ -1,83 +1,117 @@
-# Corrección del módulo de importación y conciliación
+# Ideas de automatización con IA (Gemini) para Propz
 
-Cambios acotados a: parsers, `_authenticated.rent.import.tsx`, dashboard (editar monto), esquema BD para multi-RUT y clave única de cartola. Nada más se toca.
+## Aclaración importante: ya tienes acceso a Gemini
 
-## 1. Fechas sin corrimiento (PDF y Excel)
+El proyecto **ya está conectado a Gemini** a través del Lovable AI Gateway. El archivo `src/lib/service-extraction.server.ts` ya usa modelos como `google/gemini-3-flash` y `google/gemini-2.5-flash` para leer pantallazos de Servipag. **No necesitas una API key gratuita de Gemini por separado** — el gateway ya la gestiona. Solo necesitas un plan con créditos de AI Gateway (el workspace incluye una franquicia mensual gratuita).
 
-**Problema:** `parseDate` para PDF construye `Date` en distintos husos; el Excel con `cellDates:true` devuelve `Date` en UTC-medianoche, que al leer con `getDate()` local en Chile queda un día antes. `formatDate` también usa `new Date(iso)` (UTC).
+## Procesos manuales actuales (oportunidades)
 
-**Fix:**
-- `parseDate` en `bank-parsers.ts`: mantener strings `YYYY-MM-DD`; para `Date` de Excel usar `getUTCFullYear/Month/Date`; para serial numérico usar `XLSX.SSF.parse_date_code` (ya OK).
-- `formatDate` en `format.ts`: parsear el ISO como piezas (`[y,m,d]`) sin `new Date(iso)`, para no depender del huso.
+Tras revisar el código, estos son los procesos que hoy requieren acción manual del usuario:
 
-## 2. Parser PDF Scotiabank por columnas
+1. **Conciliación de cartolas bancarias** — el usuario sube la cartola, el sistema parsea y hace matching por reglas (RUT, cuenta, nombre), pero las transacciones no coincidentes quedan para revisión manual.
+2. **Confirmación/reverso de pagos** — el usuario confirma manualmente cada pago desde el dashboard.
+3. **Ingreso de arrendatarios** — el usuario llena a mano nombre, RUT, monto, fechas.
+4. **Carga de documentos de servicios** — el usuario sube pantallazos de Servipag (ya con IA, pero requiere acción).
+5. **Monitoreo de vencimientos** — el sistema detecta, pero el usuario debe actuar.
+6. **Búsqueda de información** — el usuario navega manualmente por propiedades/unidades para encontrar datos.
 
-**Problema:** el parser actual toma el último número de la línea como monto; en Scotiabank hay columnas `Cargos | Abonos | Saldo`, y el "último" suele ser el saldo, no el abono.
+## Ideas de automatización con IA (ordenadas por impacto)
 
-**Fix:** en `parsePdf`:
-- Detectar encabezados `Fecha`, `Cargos`, `Abonos`, `Saldo` en la primera línea con esas palabras y capturar sus coordenadas `x`.
-- Para cada línea con fecha, tomar el número cuya `x` cae bajo la columna `Abonos`. Ignorar `Saldo` y `Cargos`.
-- Si no se detectan columnas (otros bancos), caer al heurístico actual.
+### 1. Conciliación inteligente de pagos con IA ⭐ (Alto impacto)
 
-## 3. Múltiples RUT por contrato
+**Problema**: Cuando el motor de matching por reglas no encuentra coincidencia (`confidence: "none"` o `"manual"`), el usuario debe asociar manualmente cada transacción.
 
-**Esquema:** nueva columna `rentable_units.tenant_ruts text[] not null default '{}'`. Se conserva `tenant_rut` como legado; los parsers indexan por unión de ambos.
+**Solución**: Usar Gemini para analizar la descripción de la transacción bancaria + datos del pagador y sugerir a qué unidad/tenant corresponde. El modelo recibe: la descripción cruda de la cartola, el RUT/nombre del pagador, y la lista de unidades activas con sus tenants. Devuelve el `unitId` más probable + nivel de confianza.
 
-**UI:** en la ficha de unidad (`_authenticated.properties.$id.edit.tsx`) agregar un campo "RUTs autorizados (uno por línea)" que edita `tenant_ruts`. Sin tocar el resto del formulario.
+**Flujo**:
+```
+Cartola subida → parseo → matching por reglas → si confidence < exact →
+  Gemini analiza descripción → sugiere unidad → usuario confirma/corrige
+```
 
-## 4. Almacenamiento de múltiples cartolas + clave única
+**Beneficio**: Reduce drásticamente el trabajo manual de conciliación. Las transacciones con RUT/cuenta coincidentes siguen por reglas (rápido y gratis); solo las ambiguas usan IA.
 
-**Esquema:**
-- `bank_statement_imports`: añadir `account_number text`, `statement_downloaded_at timestamptz default now()`, `raw_transactions jsonb`, `applied boolean default false`.
-- Índice único parcial `(organization_id, bank_name, account_number, period_year, period_month)` — el nuevo upload reemplaza al anterior con el mismo cuarteto: borrar los `bank_transactions`/`rent_payment_allocations` derivados de la versión anterior y crear la nueva versión.
+---
 
-**UI Importar:** el flujo ahora pide seleccionar **banco**, **cuenta**, **mes** y **año** al subir (auto-completados desde el PDF cuando se detecten). Al aplicar:
-1. Insert de `bank_statement_imports` con esos campos + `raw_transactions`.
-2. Si existía versión previa con misma clave, borrarla en cascada.
-3. Continuar el flujo normal de match/aplicación.
+### 2. Lectura automática de contratos de arriendo (Alto impacto)
 
-## 5. Aplicar a Arriendos: agrupación y error
+**Problema**: Al ingresar un nuevo arrendatario, el usuario debe transcribir manualmente nombre, RUT, monto, fechas, día de pago desde el contrato físico/PDF.
 
-**Fix del error `[object Object]`:** serializar errores Supabase con `err.message ?? err.error_description ?? JSON.stringify(err)`.
+**Solución**: Permitir subir el contrato (PDF o foto) y que Gemini extraiga: nombre del arrendatario, RUT, monto del arriendo, fecha de inicio, fecha de término, día de pago, y datos de la garantía. Pre-llenar el formulario de la unidad con los datos extraídos para que el usuario solo revise y confirme.
 
-**Agrupación:** antes de crear allocations, agrupar por `(unidad, año, mes)` sumando todos los `bank_transactions` que caen ahí (incluyendo múltiples RUT del mismo contrato y múltiples abonos del mismo RUT). Un solo `rent_payment` por período; una `allocation` por transacción (para trazabilidad), o una consolidada si prefieren — el trigger recalcula `amount_paid`.
+**Beneficio**: Elimina la transcripción manual. Es la extensión natural del motor que ya lee Servipag.
 
-**Flag `Requiere revisión`:** si el total asignado difiere en >20% (por exceso o defecto) del `base_rent_amount`, marcar `rent_payments.notes = 'REVIEW'` y agregar columna `needs_review boolean default false`. El panel mensual muestra badge ámbar "Requiere revisión".
+---
 
-## 6. Editar monto desde el panel mensual
+### 3. Asistente de consultas en lenguaje natural (Medio impacto)
 
-**UI:** en cada `PaymentRow` del dashboard, un botón "Editar monto" abre un prompt (o input inline) que hace `UPDATE rent_payments SET amount = X` para el período. Ya se puede editar `amount_paid` vía allocations parciales; ahora también el monto esperado del mes.
+**Problema**: El usuario debe navegar múltiples pantallas para responder preguntas como "¿qué propiedades tienen arriendos atrasados en Las Condes?" o "¿cuánto cobré el mes pasado vs. este mes?".
 
-## 7. Conciliación consolidada
+**Solución**: Un chat o barra de consulta donde el usuario escribe en español natural y Gemini responde con datos del portfolio. El modelo recibe un resumen estructurado del estado actual (propiedades, pagos, servicios, alertas) y responde. No reemplaza las vistas existentes; las complementa.
 
-Al aplicar cartolas, el sistema:
-- Recorre **todas** las `bank_statement_imports` no aplicadas (o todas las últimas versiones por clave única).
-- Une los RUTs de cada unidad (`tenant_rut` + `tenant_ruts[]`).
-- Para cada unidad × período, suma todos los abonos coincidentes y crea/actualiza `rent_payments` idempotentemente (upsert por `unit_id + period_year + period_month`).
-- No duplica: cada `bank_transaction` sólo genera una `allocation` (índice único `(bank_transaction_id)` en `rent_payment_allocations` si aún no existe).
+**Ejemplos**:
+- "¿Qué unidades están vacantes?" → lista con links
+- "¿Cuánto debo cobrar este mes?" → total esperado + pendiente
+- "¿Qué servicios están en estado crítico?" → lista
 
-## Detalles técnicos
+---
 
-- Migración SQL:
-  ```sql
-  ALTER TABLE public.rentable_units ADD COLUMN tenant_ruts text[] NOT NULL DEFAULT '{}';
-  ALTER TABLE public.bank_statement_imports
-    ADD COLUMN account_number text,
-    ADD COLUMN statement_downloaded_at timestamptz NOT NULL DEFAULT now(),
-    ADD COLUMN raw_transactions jsonb,
-    ADD COLUMN applied boolean NOT NULL DEFAULT false;
-  CREATE UNIQUE INDEX bank_statement_unique_key
-    ON public.bank_statement_imports(organization_id, bank_name, account_number, period_year, period_month)
-    WHERE bank_name IS NOT NULL AND account_number IS NOT NULL;
-  ALTER TABLE public.rent_payments ADD COLUMN needs_review boolean NOT NULL DEFAULT false;
-  CREATE UNIQUE INDEX rent_allocations_one_per_tx
-    ON public.rent_payment_allocations(bank_transaction_id)
-    WHERE bank_transaction_id IS NOT NULL;
-  ```
-- No se tocan: propiedades, contratos, autenticación, ni otras funciones del módulo.
+### 4. Clasificación automática de documentos (Medio impacto)
 
-## Confirmación
+**Problema**: Hoy hay rutas separadas para cartolas bancarias y pantallazos de servicios. Si el usuario sube un documento al lugar equivocado, no funciona.
 
-¿Procedo con este alcance? En particular:
-- **Editar monto del mes**: ¿inline o modal? Voy con prompt simple si no hay preferencia.
-- **RUTs por contrato**: se guardan en la unidad (no hay tabla `contracts` separada aún). ¿OK?
+**Solución**: Un único punto de carga donde Gemini clasifica el documento (cartola bancaria, boleta de servicio, contrato de arriendo, otro) y lo enruta al procesador correcto automáticamente.
+
+---
+
+### 5. Detección de anomalias y predicciones (Medio impacto)
+
+**Problema**: El usuario descubre problemas tarde (servicios que suben, pagos que se atrasan recurrentemente, contratos por vencer).
+
+**Solución**: Análisis periódico con Gemini sobre los datos históricos del portfolio:
+- Alertas de servicios con aumento sostenido (>20% vs. promedio)
+- Tenants con patrón de pago tardío recurrente
+- Predicción de flujo de caja del próximo mes basado en histórico
+
+**Formato**: Tarjeta "Insights" en el dashboard, generado bajo demanda o semanalmente.
+
+---
+
+### 6. Resumen ejecutivo automático mensual (Medio impacto)
+
+**Problema**: El usuario debe revisar múltiples secciones para entender el estado del mes.
+
+**Solución**: Al final de cada mes (o bajo demanda), Gemini genera un resumen en texto natural: "Este mes cobraste $X de $Y esperado (Z%). N unidades atrasadas. Servicio de agua en propiedad X subió 30%. Contrato de propiedad Y vence en 20 días."
+
+**Formato**: Tarjeta en el dashboard o email/notificación.
+
+---
+
+### 7. Auto-detección de "sin deuda" y registro automático (Bajo impacto, alta calidad de vida)
+
+**Problema**: El usuario debe cargar documentos de servicios aunque no haya deuda, para mantener el monitoreo al día.
+
+**Solución**: Cuando Gemini detecta "sin deuda" en un documento, registrar automáticamente el valor 0 sin requerir revisión manual del usuario. Hoy ya detecta "sin deuda" pero pasa por la bandeja de revisión.
+
+---
+
+## Recomendación de implementación
+
+| Idea | Esfuerzo | Impacto | Recomendación |
+|------|----------|---------|---------------|
+| 1. Conciliación con IA | Medio | Alto | Empezar aquí |
+| 2. Lectura de contratos | Medio | Alto | Segunda prioridad |
+| 3. Asistente de consultas | Medio | Medio | Cuando el portfolio crezca |
+| 4. Clasificación de docs | Bajo | Medio | Junto con idea 2 |
+| 5. Detección de anomalías | Medio | Medio | Con datos históricos suficientes |
+| 6. Resumen mensual | Bajo | Medio | Quick win |
+| 7. Auto "sin deuda" | Bajo | Bajo | Quick win inmediato |
+
+## Arquitectura propuesta
+
+Todas las ideas usan el mismo patrón que ya funciona en `service-extraction.server.ts`:
+- Server function con `createServerFn` + `requireSupabaseAuth`
+- Llamada al Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`)
+- Modelo: `google/gemini-3-flash` (rápido y económico) o `google/gemini-3.1-pro-preview` (más preciso para tareas complejas)
+- Prompt estructurado con instrucciones claras + JSON de respuesta
+- Validación de la respuesta en el servidor antes de usarla
