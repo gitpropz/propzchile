@@ -692,27 +692,50 @@ function ImportPage() {
                       {formatCLP(r.amount)}
                     </td>
                     <td className="px-3 py-2">
-                      <Select
-                        value={r.matchedUnitId ?? ""}
-                        onValueChange={(v) =>
-                          updateRow(r.id, {
-                            matchedUnitId: v || null,
-                            matchConfidence: v ? "manual" : "none",
-                            matchReason: "none",
-                          })
-                        }
-                      >
-                        <SelectTrigger className="h-8 min-w-[14rem] text-xs">
-                          <SelectValue placeholder="Sin asignar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {units.map((u) => (
-                            <SelectItem key={u.id} value={u.id}>
-                              {u.properties?.name} · {u.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-1.5">
+                        <Select
+                          value={r.matchedUnitId ?? ""}
+                          onValueChange={(v) =>
+                            updateRow(r.id, {
+                              matchedUnitId: v || null,
+                              matchConfidence: v ? "manual" : "none",
+                              matchReason: "none",
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-8 min-w-[14rem] text-xs">
+                            <SelectValue placeholder="Sin asignar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {units.map((u) => (
+                              <SelectItem key={u.id} value={u.id}>
+                                {u.properties?.name} · {u.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {!r.matchedUnitId ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 shrink-0 px-2 text-xs"
+                            disabled={aiLoading.has(r.id)}
+                            onClick={() => suggestWithAi(r.id)}
+                            title="Sugerir unidad con IA"
+                          >
+                            {aiLoading.has(r.id) ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <WandSparkles className="h-3.5 w-3.5 text-accent-brand" />
+                            )}
+                          </Button>
+                        ) : null}
+                      </div>
+                      {r.matchedUnitId && r.matchConfidence === "suggestion" ? (
+                        <div className="mt-1 text-[10px] text-accent-brand">
+                          sugerido por IA
+                        </div>
+                      ) : null}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2">
                       <div className="flex items-center gap-1">
