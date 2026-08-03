@@ -167,6 +167,71 @@ function ImportPage() {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
 
+  /** Construye la lista de unidades candidatas para la IA (solo arrendadas). */
+  function buildCandidates(): UnitCandidate[] {
+    return units
+      .filter((u) => u.rent_active)
+      .map((u) => ({
+        unitId: u.id,
+        label: u.label,
+        propertyName: u.properties?.name ?? "",
+        tenantName: u.tenant_name ?? null,
+        tenantRut: (u as any).tenant_rut ?? null,
+        tenantAliases: (u.tenant_aliases ?? []) as string[],
+        tenantAccountNumbers: (u.tenant_account_numbers ?? []) as string[],
+        baseRentAmount: u.base_rent_amount != null ? Number(u.base_rent_amount) : null,
+      }));
+  }
+
+  async function suggestWithAi(rowId: string) {
+    const row = rows.find((r) => r.id === rowId);
+    if (!row) return;
+    setAiLoading((s) => new Set(s).add(rowId));
+    try {
+      const result = await suggestMatchWithAiFn({
+        data: {
+          movement: {
+            date: row.date,
+            amount: row.amount,
+            type: row.type,
+            payer_name: row.payer_name,
+            payer_rut: row.payer_rut,
+            payer_account: row.payer_account,
+            payer_bank: row.payer_bank,
+            operation_number: row.operation_number,
+            description: row.description,
+            raw: row.raw,
+          },
+          candidates: buildCandidates(),
+        },
+      });
+      const sug = result.suggestion;
+      if (sug.unitId) {
+        updateRow(rowId, {
+          matchedUnitId: sug.unitId,
+          matchConfidence: "suggestion",
+          matchReason: "fuzzy",
+        });
+        const unit = units.find((u) => u.id === sug.unitId);
+        toast.success(`IA sugiere: ${unit?.properties?.name ?? ""} · ${unit?.label ?? ""}`, {
+          description: `${sug.confidence === "high" ? "Alta" : sug.confidence === "medium" ? "Media" : "Baja"} confianza · ${sug.reason}`,
+        });
+      } else {
+        toast.info("La IA no pudo identificar el movimiento", { description: sug.reason });
+      }
+    } catch (e) {
+      toast.error("No pudimos analizar con IA", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setAiLoading((s) => {
+        const next = new Set(s);
+        next.delete(rowId);
+        return next;
+      });
+    }
+  }
+
   function updateStatement(id: string, patch: Partial<StatementDraft>) {
     setStatements((ss) => ss.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   }
