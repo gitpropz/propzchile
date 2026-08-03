@@ -277,6 +277,49 @@ function UnitsTab({
     rent_start_date: string;
     rent_end_date: string;
   } | null>(null);
+  const [leaseReading, setLeaseReading] = useState(false);
+
+  function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("No pudimos leer el archivo"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleLeaseUpload(file: File) {
+    if (!editDraft) return;
+    setLeaseReading(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const result = await extractLeaseFromDocumentFn({
+        data: { name: file.name, mimeType: file.type || "application/octet-stream", dataUrl },
+      });
+      const lease = result.lease;
+      setEditDraft((d) => d ? {
+        ...d,
+        tenant_name: lease.tenantName ?? d.tenant_name,
+        tenant_rut: lease.tenantRut ?? d.tenant_rut,
+        tenant_email: lease.tenantEmail ?? d.tenant_email,
+        tenant_contact: lease.tenantContact ?? d.tenant_contact,
+        base_rent_amount: lease.baseRentAmount != null ? String(lease.baseRentAmount) : d.base_rent_amount,
+        rent_start_date: lease.rentStartDate ?? d.rent_start_date,
+        rent_end_date: lease.rentEndDate ?? d.rent_end_date,
+        payment_day: lease.paymentDay != null ? String(lease.paymentDay) : d.payment_day,
+        rent_active: lease.tenantName != null ? true : d.rent_active,
+      } : null);
+      toast.success("Contrato leído", {
+        description: "Revisa los datos extraídos antes de guardar",
+      });
+    } catch (e) {
+      toast.error("No pudimos leer el contrato", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setLeaseReading(false);
+    }
+  }
 
   function startEdit(u: Unit) {
     setEditingId(u.id);
