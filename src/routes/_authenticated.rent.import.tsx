@@ -24,6 +24,8 @@ import {
 import { formatRut } from "@/lib/rut";
 import { ensureRentPayment } from "@/lib/rent-allocations";
 import { toISODate } from "@/lib/rent-status";
+import { suggestMatchWithAiFn } from "@/lib/ai-reconciliation.functions";
+import type { UnitCandidate } from "@/lib/ai-reconciliation.server";
 import type { Database } from "@/integrations/supabase/types";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"] & {
