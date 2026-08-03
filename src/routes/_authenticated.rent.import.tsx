@@ -554,17 +554,35 @@ function ImportPage() {
               <span className="font-medium text-foreground">{totalIncluded}</span> de {rows.length} listos para
               aplicar · Total {formatCLP(totalAmount)}
             </div>
-            <Button size="sm" onClick={applyAll} disabled={applying || totalIncluded === 0}>
-              {applying ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
-              Aplicar a arriendos
-            </Button>
+            <div className="flex items-center gap-2">
+              {unidentified > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={aiLoading.size > 0 || aiBatchLoading}
+                  onClick={suggestAllWithAi}
+                >
+                  {aiBatchLoading ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <WandSparkles className="mr-1 h-4 w-4" />
+                  )}
+                  Sugerir {unidentified} con IA
+                </Button>
+              ) : null}
+              <Button size="sm" onClick={applyAll} disabled={applying || totalIncluded === 0}>
+                {applying ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
+                Aplicar a arriendos
+              </Button>
+            </div>
           </div>
 
           {unidentified > 0 ? (
             <div className="mt-3 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs">
               Hay {unidentified} movimiento(s) sin identificar. Agrega el RUT, nombre/alias o cuenta de origen del
               pagador en la ficha de la unidad en{" "}
-              <Link className="underline" to="/properties">Propiedades</Link>, o asigna la unidad manualmente abajo.
+              <Link className="underline" to="/properties">Propiedades</Link>, asigna la unidad manualmente abajo, o
+              usa <span className="font-medium">Sugerir con IA</span> para que Gemini analice cada movimiento.
             </div>
           ) : null}
 
