@@ -321,6 +321,37 @@ function UnitsTab({
     }
   }
 
+  async function handleLeaseUploadForAdd(file: File) {
+    setLeaseReading(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const result = await extractLeaseFromDocumentFn({
+        data: { name: file.name, mimeType: file.type || "application/octet-stream", dataUrl },
+      });
+      const lease = result.lease;
+      if (lease.tenantName) setTenantName(lease.tenantName);
+      if (lease.tenantRut) setTenantRut(lease.tenantRut);
+      if (lease.tenantEmail) setTenantEmail(lease.tenantEmail);
+      if (lease.tenantContact) setTenantContact(lease.tenantContact);
+      if (lease.baseRentAmount != null) setRent(String(lease.baseRentAmount));
+      if (lease.rentStartDate) {
+        setRentStart(lease.rentStartDate);
+        setRentEnd(lease.rentEndDate ?? addOneYear(lease.rentStartDate));
+      }
+      if (lease.paymentDay != null) setPaymentDay(String(lease.paymentDay));
+      if (lease.tenantName) setRentActive(true);
+      toast.success("Contrato leído", {
+        description: "Revisa los datos extraídos antes de guardar",
+      });
+    } catch (e) {
+      toast.error("No pudimos leer el contrato", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setLeaseReading(false);
+    }
+  }
+
   function startEdit(u: Unit) {
     setEditingId(u.id);
     setEditDraft({
