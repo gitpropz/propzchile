@@ -90,6 +90,7 @@ function ImportPage() {
   const [statements, setStatements] = useState<StatementDraft[]>([]);
   const [rows, setRows] = useState<ReviewTx[]>([]);
   const [aiLoading, setAiLoading] = useState<Set<string>>(new Set());
+  const [aiBatchLoading, setAiBatchLoading] = useState(false);
 
   const unitsQuery = useQuery({
     queryKey: ["import-units", orgId],
