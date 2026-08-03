@@ -504,15 +504,41 @@ function UnitsTab({
                     </div>
                   </div>
                   <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
-                    <div className="mb-2 flex items-center justify-between gap-3">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                       <h4 className="text-sm font-semibold">Condiciones del arriendo</h4>
-                      <label className="flex items-center gap-2 text-xs">
-                        <Checkbox
-                          checked={editDraft.rent_active}
-                          onCheckedChange={(v) => setEditDraft({ ...editDraft, rent_active: v === true })}
-                        />
-                        Arrendada actualmente
-                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-accent-brand/30 bg-accent-brand/5 px-2.5 py-1 text-xs font-medium text-accent-brand hover:bg-accent-brand/10">
+                          {leaseReading ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Leyendo contrato…
+                            </>
+                          ) : (
+                            <>
+                              <WandSparkles className="h-3.5 w-3.5" />
+                              Leer contrato con IA
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            disabled={leaseReading}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              e.target.value = "";
+                              if (f) handleLeaseUpload(f);
+                            }}
+                          />
+                        </label>
+                        <label className="flex items-center gap-2 text-xs">
+                          <Checkbox
+                            checked={editDraft.rent_active}
+                            onCheckedChange={(v) => setEditDraft({ ...editDraft, rent_active: v === true })}
+                          />
+                          Arrendada actualmente
+                        </label>
+                      </div>
                     </div>
                     <div className="grid gap-2 md:grid-cols-4">
                       <div className="space-y-1">
