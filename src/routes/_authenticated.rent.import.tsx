@@ -233,6 +233,62 @@ function ImportPage() {
     }
   }
 
+  async function suggestAllWithAi() {
+    const unmatched = rows.filter((r) => !r.matchedUnitId);
+    if (unmatched.length === 0) return;
+    setAiBatchLoading(true);
+    let suggested = 0;
+    for (const row of unmatched) {
+      setAiLoading((s) => new Set(s).add(row.id));
+      try {
+        const result = await suggestMatchWithAiFn({
+          data: {
+            movement: {
+              date: row.date,
+              amount: row.amount,
+              type: row.type,
+              payer_name: row.payer_name,
+              payer_rut: row.payer_rut,
+              payer_account: row.payer_account,
+              payer_bank: row.payer_bank,
+              operation_number: row.operation_number,
+              description: row.description,
+              raw: row.raw,
+            },
+            candidates: buildCandidates(),
+          },
+        });
+        const sug = result.suggestion;
+        if (sug.unitId) {
+          updateRow(row.id, {
+            matchedUnitId: sug.unitId,
+            matchConfidence: "suggestion",
+            matchReason: "fuzzy",
+          });
+          suggested++;
+        }
+      } catch {
+        // continue to next row
+      } finally {
+        setAiLoading((s) => {
+          const next = new Set(s);
+          next.delete(row.id);
+          return next;
+        });
+      }
+    }
+    setAiBatchLoading(false);
+    if (suggested > 0) {
+      toast.success(`IA identificó ${suggested} de ${unmatched.length} movimiento(s)`, {
+        description: "Revisa las sugerencias antes de aplicar",
+      });
+    } else {
+      toast.info("La IA no pudo identificar los movimientos restantes", {
+        description: "Asigna las unidades manualmente",
+      });
+    }
+  }
+
   function updateStatement(id: string, patch: Partial<StatementDraft>) {
     setStatements((ss) => ss.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   }
