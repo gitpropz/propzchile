@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, Copy, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, Copy, FileUp, Loader2, MapPin, Pencil, Plus, Trash2, WandSparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
