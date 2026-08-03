@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, FileUp, Loader2, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, FileUp, Loader2, Sparkles, Trash2, WandSparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,8 @@ import {
 import { formatRut } from "@/lib/rut";
 import { ensureRentPayment } from "@/lib/rent-allocations";
 import { toISODate } from "@/lib/rent-status";
+import { suggestMatchWithAiFn } from "@/lib/ai-reconciliation.functions";
+import type { UnitCandidate } from "@/lib/ai-reconciliation.server";
 import type { Database } from "@/integrations/supabase/types";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"] & {
@@ -87,6 +89,8 @@ function ImportPage() {
   const [applying, setApplying] = useState(false);
   const [statements, setStatements] = useState<StatementDraft[]>([]);
   const [rows, setRows] = useState<ReviewTx[]>([]);
+  const [aiLoading, setAiLoading] = useState<Set<string>>(new Set());
+  const [aiBatchLoading, setAiBatchLoading] = useState(false);
 
   const unitsQuery = useQuery({
     queryKey: ["import-units", orgId],
@@ -162,6 +166,127 @@ function ImportPage() {
 
   function updateRow(id: string, patch: Partial<ReviewTx>) {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  }
+
+  /** Construye la lista de unidades candidatas para la IA (solo arrendadas). */
+  function buildCandidates(): UnitCandidate[] {
+    return units
+      .filter((u) => u.rent_active)
+      .map((u) => ({
+        unitId: u.id,
+        label: u.label,
+        propertyName: u.properties?.name ?? "",
+        tenantName: u.tenant_name ?? null,
+        tenantRut: (u as any).tenant_rut ?? null,
+        tenantAliases: (u.tenant_aliases ?? []) as string[],
+        tenantAccountNumbers: (u.tenant_account_numbers ?? []) as string[],
+        baseRentAmount: u.base_rent_amount != null ? Number(u.base_rent_amount) : null,
+      }));
+  }
+
+  async function suggestWithAi(rowId: string) {
+    const row = rows.find((r) => r.id === rowId);
+    if (!row) return;
+    setAiLoading((s) => new Set(s).add(rowId));
+    try {
+      const result = await suggestMatchWithAiFn({
+        data: {
+          movement: {
+            date: row.date,
+            amount: row.amount,
+            type: row.type,
+            payer_name: row.payer_name,
+            payer_rut: row.payer_rut,
+            payer_account: row.payer_account,
+            payer_bank: row.payer_bank,
+            operation_number: row.operation_number,
+            description: row.description,
+            raw: row.raw,
+          },
+          candidates: buildCandidates(),
+        },
+      });
+      const sug = result.suggestion;
+      if (sug.unitId) {
+        updateRow(rowId, {
+          matchedUnitId: sug.unitId,
+          matchConfidence: "suggestion",
+          matchReason: "fuzzy",
+        });
+        const unit = units.find((u) => u.id === sug.unitId);
+        toast.success(`IA sugiere: ${unit?.properties?.name ?? ""} · ${unit?.label ?? ""}`, {
+          description: `${sug.confidence === "high" ? "Alta" : sug.confidence === "medium" ? "Media" : "Baja"} confianza · ${sug.reason}`,
+        });
+      } else {
+        toast.info("La IA no pudo identificar el movimiento", { description: sug.reason });
+      }
+    } catch (e) {
+      toast.error("No pudimos analizar con IA", {
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setAiLoading((s) => {
+        const next = new Set(s);
+        next.delete(rowId);
+        return next;
+      });
+    }
+  }
+
+  async function suggestAllWithAi() {
+    const unmatched = rows.filter((r) => !r.matchedUnitId);
+    if (unmatched.length === 0) return;
+    setAiBatchLoading(true);
+    let suggested = 0;
+    for (const row of unmatched) {
+      setAiLoading((s) => new Set(s).add(row.id));
+      try {
+        const result = await suggestMatchWithAiFn({
+          data: {
+            movement: {
+              date: row.date,
+              amount: row.amount,
+              type: row.type,
+              payer_name: row.payer_name,
+              payer_rut: row.payer_rut,
+              payer_account: row.payer_account,
+              payer_bank: row.payer_bank,
+              operation_number: row.operation_number,
+              description: row.description,
+              raw: row.raw,
+            },
+            candidates: buildCandidates(),
+          },
+        });
+        const sug = result.suggestion;
+        if (sug.unitId) {
+          updateRow(row.id, {
+            matchedUnitId: sug.unitId,
+            matchConfidence: "suggestion",
+            matchReason: "fuzzy",
+          });
+          suggested++;
+        }
+      } catch {
+        // continue to next row
+      } finally {
+        setAiLoading((s) => {
+          const next = new Set(s);
+          next.delete(row.id);
+          return next;
+        });
+      }
+    }
+    setAiBatchLoading(false);
+    if (suggested > 0) {
+      toast.success(`IA identificó ${suggested} de ${unmatched.length} movimiento(s)`, {
+        description: "Revisa las sugerencias antes de aplicar",
+      });
+    } else {
+      toast.info("La IA no pudo identificar los movimientos restantes", {
+        description: "Asigna las unidades manualmente",
+      });
+    }
   }
 
   function updateStatement(id: string, patch: Partial<StatementDraft>) {
@@ -486,17 +611,35 @@ function ImportPage() {
               <span className="font-medium text-foreground">{totalIncluded}</span> de {rows.length} listos para
               aplicar · Total {formatCLP(totalAmount)}
             </div>
-            <Button size="sm" onClick={applyAll} disabled={applying || totalIncluded === 0}>
-              {applying ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
-              Aplicar a arriendos
-            </Button>
+            <div className="flex items-center gap-2">
+              {unidentified > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={aiLoading.size > 0 || aiBatchLoading}
+                  onClick={suggestAllWithAi}
+                >
+                  {aiBatchLoading ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <WandSparkles className="mr-1 h-4 w-4" />
+                  )}
+                  Sugerir {unidentified} con IA
+                </Button>
+              ) : null}
+              <Button size="sm" onClick={applyAll} disabled={applying || totalIncluded === 0}>
+                {applying ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Sparkles className="mr-1 h-4 w-4" />}
+                Aplicar a arriendos
+              </Button>
+            </div>
           </div>
 
           {unidentified > 0 ? (
             <div className="mt-3 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs">
               Hay {unidentified} movimiento(s) sin identificar. Agrega el RUT, nombre/alias o cuenta de origen del
               pagador en la ficha de la unidad en{" "}
-              <Link className="underline" to="/properties">Propiedades</Link>, o asigna la unidad manualmente abajo.
+              <Link className="underline" to="/properties">Propiedades</Link>, asigna la unidad manualmente abajo, o
+              usa <span className="font-medium">Sugerir con IA</span> para que Gemini analice cada movimiento.
             </div>
           ) : null}
 
@@ -549,27 +692,50 @@ function ImportPage() {
                       {formatCLP(r.amount)}
                     </td>
                     <td className="px-3 py-2">
-                      <Select
-                        value={r.matchedUnitId ?? ""}
-                        onValueChange={(v) =>
-                          updateRow(r.id, {
-                            matchedUnitId: v || null,
-                            matchConfidence: v ? "manual" : "none",
-                            matchReason: "none",
-                          })
-                        }
-                      >
-                        <SelectTrigger className="h-8 min-w-[14rem] text-xs">
-                          <SelectValue placeholder="Sin asignar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {units.map((u) => (
-                            <SelectItem key={u.id} value={u.id}>
-                              {u.properties?.name} · {u.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-1.5">
+                        <Select
+                          value={r.matchedUnitId ?? ""}
+                          onValueChange={(v) =>
+                            updateRow(r.id, {
+                              matchedUnitId: v || null,
+                              matchConfidence: v ? "manual" : "none",
+                              matchReason: "none",
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-8 min-w-[14rem] text-xs">
+                            <SelectValue placeholder="Sin asignar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {units.map((u) => (
+                              <SelectItem key={u.id} value={u.id}>
+                                {u.properties?.name} · {u.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {!r.matchedUnitId ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 shrink-0 px-2 text-xs"
+                            disabled={aiLoading.has(r.id)}
+                            onClick={() => suggestWithAi(r.id)}
+                            title="Sugerir unidad con IA"
+                          >
+                            {aiLoading.has(r.id) ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <WandSparkles className="h-3.5 w-3.5 text-accent-brand" />
+                            )}
+                          </Button>
+                        ) : null}
+                      </div>
+                      {r.matchedUnitId && r.matchConfidence === "suggestion" ? (
+                        <div className="mt-1 text-[10px] text-accent-brand">
+                          sugerido por IA
+                        </div>
+                      ) : null}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2">
                       <div className="flex items-center gap-1">
