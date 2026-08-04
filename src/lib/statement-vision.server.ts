@@ -7,12 +7,15 @@
 
 import type { StandardMovement } from "@/lib/bank/types";
 
+/** Movimiento serializable (raw acotado a un objeto JSON) para cruzar el RPC. */
+export type VisionMovement = Omit<StandardMovement, "raw"> & { raw: Record<string, unknown> };
+
 export type VisionStatement = {
   bank_name: string | null;
   account_number: string | null;
   period_year: number | null;
   period_month: number | null;
-  movements: StandardMovement[];
+  movements: VisionMovement[];
 };
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -73,7 +76,7 @@ function parseResponse(text: string): VisionStatement {
   const parsed = JSON.parse(cleaned.slice(start, end + 1)) as Record<string, unknown>;
   const list = Array.isArray(parsed.movements) ? parsed.movements : [];
 
-  const movements: StandardMovement[] = [];
+  const movements: VisionMovement[] = [];
   for (const raw of list) {
     const s = raw as Record<string, unknown>;
     const date = normalizeDate(s.date);
@@ -96,7 +99,7 @@ function parseResponse(text: string): VisionStatement {
           ? s.operation_number.trim()
           : null,
       description: typeof s.description === "string" ? s.description.trim() : "",
-      raw,
+      raw: s,
     });
   }
 
