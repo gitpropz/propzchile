@@ -7,6 +7,8 @@ export type ExtractStatementImageInput = {
   mimeType: string;
   /** data:<mime>;base64,<...> */
   dataUrl: string;
+  /** Año a asumir cuando la imagen no muestra el año (año de la importación). */
+  fallbackYear?: number;
 };
 
 export const extractStatementFromImageFn = createServerFn({ method: "POST" })
@@ -19,6 +21,6 @@ export const extractStatementFromImageFn = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Falta la configuración de IA");
     const { extractStatementFromImage } = await import("@/lib/statement-vision.server");
-    const statement = await extractStatementFromImage(data, apiKey);
+    const statement = await extractStatementFromImage(data, apiKey, data.fallbackYear);
     return { statement };
   });
