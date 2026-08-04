@@ -7,8 +7,8 @@
 
 import type { StandardMovement } from "@/lib/bank/types";
 
-/** Movimiento serializable (raw acotado a un objeto JSON) para cruzar el RPC. */
-export type VisionMovement = Omit<StandardMovement, "raw"> & { raw: Record<string, unknown> };
+/** Movimiento serializable: raw viaja como JSON en texto para cruzar el RPC. */
+export type VisionMovement = Omit<StandardMovement, "raw"> & { raw: string };
 
 export type VisionStatement = {
   bank_name: string | null;
@@ -99,7 +99,7 @@ function parseResponse(text: string): VisionStatement {
           ? s.operation_number.trim()
           : null,
       description: typeof s.description === "string" ? s.description.trim() : "",
-      raw: s,
+      raw: JSON.stringify(s),
     });
   }
 
