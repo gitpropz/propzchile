@@ -26,6 +26,7 @@ import { ensureRentPayment } from "@/lib/rent-allocations";
 import { toISODate } from "@/lib/rent-status";
 import { suggestMatchWithAiFn } from "@/lib/ai-reconciliation.functions";
 import type { UnitCandidate } from "@/lib/ai-reconciliation.server";
+import { extractStatementFromImageFn } from "@/lib/statement-vision.functions";
 import type { Database } from "@/integrations/supabase/types";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"] & {
@@ -54,6 +55,48 @@ type StatementDraft = {
   periodYear: number;
   periodMonth: number;
 };
+
+const IMAGE_EXT = /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i;
+
+function isImageFile(f: File): boolean {
+  return f.type.startsWith("image/") || IMAGE_EXT.test(f.name);
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result));
+    fr.onerror = () => reject(new Error("No pudimos leer el archivo"));
+    fr.readAsDataURL(file);
+  });
+}
+
+/**
+ * Clave de identidad de un movimiento, para no duplicar un mismo abono cuando
+ * llega por dos vías (cartola + pantallazo) o cuando el pantallazo se sube dos
+ * veces con traslape. Usa fecha + monto + el identificador más fuerte que haya
+ * (RUT, cuenta de origen, n° de operación) y si no hay ninguno, el nombre del
+ * depositante o la glosa normalizada.
+ */
+function safeParse(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function movementKey(m: StandardMovement): string {
+  const norm = (v: string | null | undefined) =>
+    (v ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("es")
+      .replace(/[^a-z0-9]/g, "");
+  const ident =
+    norm(m.payer_rut) || norm(m.payer_account) || norm(m.operation_number) || norm(m.payer_name) || norm(m.description);
+  return `${m.date}|${Math.round(m.amount)}|${ident}`;
+}
 
 export const Route = createFileRoute("/_authenticated/rent/import")({
   ssr: false,
@@ -115,11 +158,58 @@ function ImportPage() {
     try {
       const newStatements: StatementDraft[] = [];
       const newRows: ReviewTx[] = [];
+      // Claves ya presentes en pantalla, para descartar duplicados exactos.
+      const seen = new Set(rows.map((r) => movementKey(r)));
+      let duplicates = 0;
       for (const f of files) {
         const stmtId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         try {
-          const { movements, meta, parser } = await parseStatement(f);
-          const credits = movements.filter((m) => m.type === "credit" && m.amount > 0);
+          let movements: StandardMovement[];
+          let meta: { bank_name: string | null; account_number: string | null; period_year?: number | null; period_month?: number | null };
+          let parser: string;
+          if (isImageFile(f)) {
+            // Pantallazo o foto de movimientos: lo lee la IA (cualquier banco/formato).
+            const dataUrl = await fileToDataUrl(f);
+            const { statement } = await extractStatementFromImageFn({
+              data: { name: f.name, mimeType: f.type || "image/jpeg", dataUrl },
+            });
+            if (statement.movements.length === 0) {
+              toast.error(`No encontramos movimientos en ${f.name}`, {
+                description: "Asegúrate de que la imagen muestre la lista de movimientos con fecha y monto.",
+              });
+              continue;
+            }
+            movements = statement.movements.map((m) => ({ ...m, raw: safeParse(m.raw) }));
+            meta = {
+              bank_name: statement.bank_name,
+              account_number: statement.account_number,
+              period_year: statement.period_year,
+              period_month: statement.period_month,
+            };
+            parser = "imagen-ia";
+          } else {
+            const parsed = await parseStatement(f);
+            movements = parsed.movements;
+            meta = parsed.meta;
+            parser = parsed.parser;
+          }
+          const credits = movements
+            .filter((m) => m.type === "credit" && m.amount > 0)
+            .filter((m) => {
+              const k = movementKey(m);
+              if (seen.has(k)) {
+                duplicates++;
+                return false;
+              }
+              seen.add(k);
+              return true;
+            });
+          if (credits.length === 0) {
+            toast.info(`Sin abonos nuevos en ${f.name}`, {
+              description: "Todos los movimientos ya estaban cargados.",
+            });
+            continue;
+          }
           const period = guessPeriod(credits);
           // El encabezado de la cartola manda por sobre la inferencia de fechas.
           const periodYear = meta.period_year ?? period.year;
@@ -156,8 +246,10 @@ function ImportPage() {
       const matched = newRows.filter((r) => r.matchedUnitId).length;
       if (newRows.length > 0) {
         toast.success(`${newRows.length} abono(s) detectados en ${newStatements.length} cartola(s)`, {
-          description: `${matched} identificados automáticamente`,
+          description: `${matched} identificados automáticamente${duplicates > 0 ? ` · ${duplicates} duplicado(s) omitido(s)` : ""}`,
         });
+      } else if (duplicates > 0) {
+        toast.info(`${duplicates} movimiento(s) duplicado(s) omitido(s)`);
       }
     } finally {
       setParsing(false);
@@ -511,16 +603,17 @@ function ImportPage() {
           <div>
             <div className="text-sm font-medium">Subir cartolas</div>
             <div className="mt-0.5 text-xs text-muted-foreground">
-              Formatos: .xlsx, .xls, .csv o .pdf · puedes seleccionar varias a la vez
+              Formatos: .xlsx, .xls, .csv, .pdf o imágenes (.jpg, .png) · los pantallazos de movimientos los
+              lee la IA y se omiten los duplicados
             </div>
           </div>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm hover:bg-muted">
             <FileUp className="h-4 w-4" />
-            Agregar cartolas
+            Agregar cartolas o pantallazos
             <input
               type="file"
               multiple
-              accept=".xlsx,.xls,.csv,.pdf"
+              accept=".xlsx,.xls,.csv,.pdf,image/*"
               className="hidden"
               onChange={(e) => {
                 const fs = Array.from(e.target.files ?? []);
