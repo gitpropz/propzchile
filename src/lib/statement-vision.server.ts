@@ -35,8 +35,7 @@ Reglas estrictas:
 - Extrae TODOS los movimientos visibles, en el mismo orden en que aparecen. No omitas filas ni las resumas.
 - date: la fecha del movimiento tal como aparece en la imagen, normalizada a YYYY-MM-DD. Si la lista agrupa
   por encabezados de fecha ("20 de julio, 2026"), aplica ese encabezado a todos los movimientos bajo él.
-  Si el año no aparece, usa el año del encabezado o período de la pantalla; si es imposible saberlo, usa null
-  para ese movimiento (no lo inventes).
+  Si el año no aparece en la imagen, usa el AÑO DE REFERENCIA que se te indica en el mensaje del usuario.
 - amount: número POSITIVO, sin puntos, comas ni símbolos ($1.500.500 -> 1500500).
 - type: "credit" para abonos/depósitos/transferencias recibidas (normalmente en verde o con signo +),
   "debit" para cargos, pagos, giros y transferencias enviadas (rojo o con signo -).
@@ -60,15 +59,24 @@ function toNumber(v: unknown): number | null {
   return null;
 }
 
-function normalizeDate(v: unknown): string | null {
+function normalizeDate(v: unknown, fallbackYear: number): string | null {
   if (typeof v !== "string") return null;
-  const m = v.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (!m) return null;
-  const [, y, mo, d] = m;
-  return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  const t = v.trim();
+  const full = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (full) {
+    const [, y, mo, d] = full;
+    return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  // Fecha sin año ("08-05", "--08-05"): asumimos el año de la importación.
+  const partial = t.match(/^-{0,2}(\d{1,2})-(\d{1,2})$/);
+  if (partial) {
+    const [, mo, d] = partial;
+    return `${fallbackYear}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return null;
 }
 
-function parseResponse(text: string): VisionStatement {
+function parseResponse(text: string, fallbackYear: number): VisionStatement {
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
@@ -79,7 +87,7 @@ function parseResponse(text: string): VisionStatement {
   const movements: VisionMovement[] = [];
   for (const raw of list) {
     const s = raw as Record<string, unknown>;
-    const date = normalizeDate(s.date);
+    const date = normalizeDate(s.date, fallbackYear);
     const amount = toNumber(s.amount);
     if (!date || amount == null || amount === 0) continue;
     const rut = typeof s.payer_rut === "string" ? s.payer_rut.replace(/[^0-9kK]/g, "").toUpperCase() : "";
@@ -115,6 +123,8 @@ function parseResponse(text: string): VisionStatement {
 export async function extractStatementFromImage(
   file: { name: string; mimeType: string; dataUrl: string },
   apiKey: string,
+  /** Año a asumir cuando la imagen no muestra el año del movimiento. */
+  fallbackYear: number = new Date().getFullYear(),
 ): Promise<VisionStatement> {
   const block = file.mimeType.startsWith("image/")
     ? { type: "image_url", image_url: { url: file.dataUrl } }
@@ -134,7 +144,7 @@ export async function extractStatementFromImage(
             content: [
               {
                 type: "text",
-                text: "Extrae todos los movimientos bancarios visibles en esta imagen, con fecha, monto, tipo y datos del depositante.",
+                text: `Extrae todos los movimientos bancarios visibles en esta imagen, con fecha, monto, tipo y datos del depositante. AÑO DE REFERENCIA: ${fallbackYear} (úsalo cuando la imagen no muestre el año).`,
               },
               block,
             ],
@@ -148,7 +158,7 @@ export async function extractStatementFromImage(
     }
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     try {
-      return parseResponse(json.choices?.[0]?.message?.content ?? "");
+      return parseResponse(json.choices?.[0]?.message?.content ?? "", fallbackYear);
     } catch {
       lastError = "Respuesta no interpretable";
     }

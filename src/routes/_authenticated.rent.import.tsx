@@ -171,7 +171,12 @@ function ImportPage() {
             // Pantallazo o foto de movimientos: lo lee la IA (cualquier banco/formato).
             const dataUrl = await fileToDataUrl(f);
             const { statement } = await extractStatementFromImageFn({
-              data: { name: f.name, mimeType: f.type || "image/jpeg", dataUrl },
+              data: {
+                name: f.name,
+                mimeType: f.type || "image/jpeg",
+                dataUrl,
+                fallbackYear: new Date().getFullYear(),
+              },
             });
             if (statement.movements.length === 0) {
               toast.error(`No encontramos movimientos en ${f.name}`, {
