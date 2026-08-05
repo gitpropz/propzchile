@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Building, FileText, Settings, LogOut, Menu, X, FileUp, Gauge } from "lucide-react";
+import { LayoutDashboard, Building, FileText, Settings, LogOut, Menu, X, FileUp, Gauge, Sparkles } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard-v2", label: "Dashboard V2", icon: Sparkles },
   { to: "/properties", label: "Propiedades", icon: Building },
   { to: "/contracts", label: "Contratos", icon: FileText },
   { to: "/rent/import", label: "Importar cartola", icon: FileUp },
