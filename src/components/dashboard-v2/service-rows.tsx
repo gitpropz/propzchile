@@ -99,7 +99,7 @@ export function ServiceRows({
                   <div className="truncate text-[11px] text-muted-foreground">
                     {s.provider ?? "Sin compañía"}
                     {s.expected_amount != null ? ` · esperado ${formatCLP(Number(s.expected_amount))}` : ""}
-                    {s.account_identifier ? ` · N° ${s.account_identifier}` : ""}
+                    {s.service_identifier ? ` · N° ${s.service_identifier}` : ""}
                   </div>
                 </div>
               </div>
