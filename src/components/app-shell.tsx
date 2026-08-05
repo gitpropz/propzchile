@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard-v2", label: "Dashboard V2", icon: Sparkles },
   { to: "/properties", label: "Propiedades", icon: Building },
   { to: "/contracts", label: "Contratos", icon: FileText },
   { to: "/rent/import", label: "Importar cartola", icon: FileUp },
