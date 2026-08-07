@@ -79,9 +79,26 @@ function unitTypeRank(t: string | null | undefined): number {
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard-v3")({
-  head: () => ({ meta: [{ title: "Estado del Patrimonio Inmobiliario — Propz" }] }),
+  head: () => ({
+    meta: [
+      { title: "Dashboard V3 — Cobranza y patrimonio | Propz" },
+      {
+        name: "description",
+        content:
+          "Dashboard V3 de Propz: resumen del mes, alertas que requieren acción, tendencia de cobranza y estado por propiedad con servicios integrados.",
+      },
+      { property: "og:title", content: "Dashboard V3 — Cobranza y patrimonio | Propz" },
+      {
+        property: "og:description",
+        content: "Resumen del mes, alertas, tendencia y estado por propiedad en una sola vista.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Dashboard,
 });
+
 
 function currentPeriod() {
   const now = new Date();
