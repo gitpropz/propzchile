@@ -644,9 +644,9 @@ function Dashboard() {
           </Panel>
         ) : (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            {groups.map((g) => (
+            {groups.map((g, gi) => (
               <PropertyGroup
-                key={g.property?.id ?? "sin-propiedad"}
+                key={`g-${gi}-${g.property?.id ?? "sin-propiedad"}`}
                 property={g.property}
                 rows={g.rows}
                 year={year}
