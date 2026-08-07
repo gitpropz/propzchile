@@ -721,8 +721,8 @@ function PropertyGroup({
       </div>
 
       <ul className="mt-1 divide-y divide-border/50 px-2 sm:px-3">
-        {rows.map((r) => (
-          <li key={r.unit.id}>
+        {rows.map((r, ri) => (
+          <li key={`u-${ri}-${r.unit.id}`}>
             <UnitRow
               unit={r.unit}
               property={property}
