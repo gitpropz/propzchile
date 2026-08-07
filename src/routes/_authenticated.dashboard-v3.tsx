@@ -59,7 +59,7 @@ function unitTypeRank(t: string | null | undefined): number {
   return UNIT_TYPE_ORDER[t ?? "other"] ?? 2;
 }
 
-export const Route = createFileRoute("/_authenticated/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard-v3")({
   head: () => ({ meta: [{ title: "Estado del Patrimonio Inmobiliario — Propz" }] }),
   component: Dashboard,
 });
@@ -757,7 +757,93 @@ function TrendChart({
   );
 }
 
-function PaymentRow({
+/** Grupo por propiedad: cabecera + unidades + servicios de la propiedad. */
+function PropertyGroup({
+  property,
+  rows,
+  year,
+  month,
+  orgId,
+  servicesPeriod,
+  monitoring,
+  onServicesSaved,
+  actions,
+}: {
+  property: Property | null;
+  rows: { unit: Unit; payment: RentPayment | null; status: PaymentStatus }[];
+  year: number;
+  month: number;
+  orgId?: string;
+  servicesPeriod: string;
+  monitoring: PropertyMonitoring | null;
+  onServicesSaved: () => void;
+  actions: {
+    onConfirm: (unit: Unit) => void;
+    onPartial: (unit: Unit, payment: RentPayment | null) => void;
+    onUndo: (paymentId: string) => void;
+    onEditAmount: (unit: Unit, payment: RentPayment | null) => void;
+    onClearReview: (paymentId: string) => void;
+  };
+}) {
+  const expected = rows.reduce((s, r) => s + expectedAmount(r.unit, r.payment, year, month), 0);
+  const paid = rows.reduce((s, r) => s + Number(r.payment?.amount_paid ?? 0), 0);
+  const pct = expected > 0 ? Math.min(100, (paid / expected) * 100) : paid > 0 ? 100 : 0;
+  const late = rows.filter((r) => r.status === "late" || r.status === "warn").length;
+
+  return (
+    <Panel className="overflow-hidden">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-4 pt-4 sm:px-5">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-foreground">{property?.name ?? "Sin propiedad"}</div>
+          <div className="truncate text-xs text-muted-foreground">
+            {[property?.address, property?.comuna].filter(Boolean).join(" · ") || "—"}
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-sm font-semibold tabular text-foreground">{formatCLP(paid)}</div>
+          <div className="text-[11px] text-muted-foreground tabular">de {formatCLP(expected)}</div>
+        </div>
+      </div>
+
+      <div className="px-4 pt-3 sm:px-5">
+        <ProgressLine pct={pct} tone={late > 0 ? "danger" : pct >= 100 ? "success" : "warning"} className="h-1" />
+      </div>
+
+      <ul className="mt-1 divide-y divide-border/50 px-2 sm:px-3">
+        {rows.map((r) => (
+          <li key={r.unit.id}>
+            <UnitRow
+              unit={r.unit}
+              property={property}
+              payment={r.payment}
+              status={r.status}
+              year={year}
+              month={month}
+              onConfirm={() => actions.onConfirm(r.unit)}
+              onPartial={() => actions.onPartial(r.unit, r.payment)}
+              onUndo={r.payment ? () => actions.onUndo(r.payment!.id) : undefined}
+              onEditAmount={() => actions.onEditAmount(r.unit, r.payment)}
+              onClearReview={r.payment ? () => actions.onClearReview(r.payment!.id) : undefined}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {monitoring && orgId ? (
+        <div className="border-t border-border/50 px-3 py-2 sm:px-4">
+          <UnitServicesIndicator
+            organizationId={orgId}
+            monitoring={monitoring}
+            period={servicesPeriod}
+            onSaved={onServicesSaved}
+          />
+        </div>
+      ) : null}
+    </Panel>
+  );
+}
+
+function UnitRow({
   unit,
   property,
   payment,
@@ -769,10 +855,6 @@ function PaymentRow({
   onUndo,
   onEditAmount,
   onClearReview,
-  orgId,
-  servicesPeriod,
-  monitoring,
-  onServicesSaved,
 }: {
   unit: Unit;
   property: Property | null;
@@ -785,10 +867,6 @@ function PaymentRow({
   onUndo?: () => void;
   onEditAmount: () => void;
   onClearReview?: () => void;
-  orgId?: string;
-  servicesPeriod: string;
-  monitoring: PropertyMonitoring | null;
-  onServicesSaved: () => void;
 }) {
   const needsReview = !!(payment as any)?.needs_review;
   const total = payment?.amount != null ? Number(payment.amount) : Number(unit.base_rent_amount ?? 0);
@@ -797,137 +875,134 @@ function PaymentRow({
   const currency = payment?.currency ?? unit.base_rent_currency ?? "CLP";
   const meta = STATUS_META[status];
   const due = dueDateFor(year, month, unit.payment_day);
-  const progress = total > 0 ? Math.min(100, (paid / total) * 100) : status === "paid" ? 100 : 0;
-  const tenant = status === "inactive" ? "PENDIENTE" : unit.tenant_name || "Sin arrendatario";
+  const tenant = status === "inactive" ? "Sin arrendatario" : unit.tenant_name || "Sin arrendatario";
 
   return (
-    <Card
-      className={cn(
-        "flex flex-col gap-1 overflow-hidden p-2 shadow-none",
-        status === "inactive" && "bg-warning/5",
-      )}
-    >
-      {/* Fila 1: Propiedad · Unidad + Estado */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <span className={`h-2 w-2 shrink-0 rounded-full ${meta.dot}`} aria-label={meta.label} />
-          <span className="truncate text-sm font-medium leading-tight">{property?.name ?? "—"}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">· {unit.label}</span>
+    <div className="rounded-xl px-2 py-2.5 transition-propz hover:bg-muted/40">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${meta.dot}`} aria-hidden />
+          <div className="min-w-0">
+            <div className="truncate text-sm font-medium text-foreground">{unit.label ?? "Unidad"}</div>
+            <div className="truncate text-xs text-muted-foreground">{tenant}</div>
+          </div>
         </div>
+        <div className="shrink-0 text-right">
+          <div className="text-sm font-semibold tabular text-foreground">{formatMoney(paid, currency)}</div>
+          <div className="text-[11px] text-muted-foreground tabular">de {formatMoney(total, currency)}</div>
+        </div>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <span className={`shrink-0 rounded-full border px-1.5 py-0 text-[10px] font-medium ${meta.badge}`}>
           {meta.label}
         </span>
-      </div>
+        {needsReview ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/15 px-1.5 text-[10px] font-semibold uppercase text-warning">
+            <AlertTriangle className="h-3 w-3" /> Rev.
+          </span>
+        ) : null}
 
-      {/* Fila 2: Arrendatario + Abonado */}
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-xs text-muted-foreground">{tenant}</span>
-        <span className="shrink-0 tabular-nums text-sm font-semibold text-success">
-          {formatMoney(paid, currency)}
-          <span className="ml-1 text-[10px] font-normal text-muted-foreground">/ {formatMoney(total, currency)}</span>
-        </span>
-      </div>
-
-      {/* Barra de progreso */}
-      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className={`h-full rounded-full transition-all ${status === "paid" ? "bg-success" : paid > 0 ? "bg-info" : "bg-muted-foreground/30"}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      {/* Fila 3: Acciones */}
-      <div className="flex items-center justify-between gap-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-1">
-          {needsReview ? (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/15 px-1.5 text-[10px] font-semibold uppercase text-warning">
-              <AlertTriangle className="h-3 w-3" /> Rev.
-            </span>
-          ) : null}
-
-          {status === "inactive" ? (
-            <Link
-              to="/properties/$id"
-              params={{ id: property?.id ?? unit.property_id }}
-              search={{ tab: "units", unit: unit.id }}
-            >
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs">Asignar</Button>
-            </Link>
-
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onEditAmount} title="Editar monto abonado">
-                Editar
-              </Button>
+        {status === "inactive" ? (
+          <Link
+            to="/properties/$id"
+            params={{ id: property?.id ?? unit.property_id }}
+            search={{ tab: "units", unit: unit.id }}
+          >
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+              Asignar
+            </Button>
+          </Link>
+        ) : (
+          <>
+            {status === "paid" ? (
               <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onPartial}>
                 <Wallet className="mr-1 h-3 w-3" /> Abonar
               </Button>
-              {status === "paid" ? (
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onUndo}>
-                  Revertir
+            ) : (
+              <Button size="sm" className="h-7 px-2 text-xs" onClick={onConfirm}>
+                <Check className="mr-1 h-3 w-3" /> Confirmar
+              </Button>
+            )}
+          </>
+        )}
+
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ver detalles">
+                <Eye className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-auto max-h-[85vh] rounded-t-2xl">
+              <SheetHeader className="pb-2">
+                <SheetTitle className="text-base">
+                  {property?.name ?? "—"} · {unit.label}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="py-2 text-sm">
+                <dl className="grid gap-3 px-4 pb-4 sm:grid-cols-2">
+                  <Info label="Estado" value={meta.label} />
+                  <Info label="Vencimiento" value={status === "inactive" ? "—" : due} />
+                  <Info
+                    label="Monto esperado"
+                    value={
+                      payment?.amount != null && Number(payment.amount) !== Number(unit.base_rent_amount ?? 0)
+                        ? `${formatMoney(total, currency)} (base ${formatMoney(Number(unit.base_rent_amount ?? 0), currency)})`
+                        : formatMoney(total, currency)
+                    }
+                  />
+                  <Info label="Abonado" value={formatMoney(paid, currency)} />
+                  <Info label="Saldo pendiente" value={formatMoney(remaining, currency)} />
+                  <Info label="Pagado el" value={payment?.paid_date ?? "—"} />
+                  <Info label="Arrendatario" value={tenant} />
+                  <Info label="Contacto" value={unit.tenant_contact ?? "—"} />
+                  <Info label="Inicio contrato" value={unit.rent_start_date ?? "—"} />
+                  <Info label="Notas" value={payment?.notes ?? unit.notes ?? "—"} />
+                </dl>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {status !== "inactive" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Más acciones">
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
-              ) : (
-                <Button size="sm" className="h-7 px-2 text-xs" onClick={onConfirm}>
-                  <Check className="mr-1 h-3 w-3" /> Confirmar
-                </Button>
-              )}
-            </>
-          )}
-          {needsReview && onClearReview ? (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onClearReview} title="Marcar como revisado">
-              OK
-            </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs">Acciones</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onEditAmount}>Editar monto abonado</DropdownMenuItem>
+                <DropdownMenuItem onClick={onPartial}>Registrar abono parcial</DropdownMenuItem>
+                {onUndo ? (
+                  <DropdownMenuItem onClick={onUndo} className="text-destructive">
+                    Revertir abonos
+                  </DropdownMenuItem>
+                ) : null}
+                {needsReview && onClearReview ? (
+                  <DropdownMenuItem onClick={onClearReview}>Marcar como revisado</DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link
+                    to="/properties/$id"
+                    params={{ id: property?.id ?? unit.property_id }}
+                    search={{ tab: "units", unit: unit.id }}
+                  >
+                    Configurar unidad
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
         </div>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Ver detalles">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto max-h-[85vh] rounded-t-2xl">
-            <SheetHeader className="pb-2">
-              <SheetTitle className="text-base">
-                {property?.name ?? "—"} · {unit.label}
-              </SheetTitle>
-            </SheetHeader>
-            <div className="py-2 text-sm">
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <Info label="Estado" value={meta.label} />
-                <Info label="Vencimiento" value={status === "inactive" ? "—" : due} />
-                <Info
-                  label="Monto esperado"
-                  value={
-                    payment?.amount != null && Number(payment.amount) !== Number(unit.base_rent_amount ?? 0)
-                      ? `${formatMoney(total, currency)} (base ${formatMoney(Number(unit.base_rent_amount ?? 0), currency)})`
-                      : formatMoney(total, currency)
-                  }
-                />
-                <Info label="Abonado" value={formatMoney(paid, currency)} />
-                <Info label="Saldo pendiente" value={formatMoney(remaining, currency)} />
-                <Info label="Pagado el" value={payment?.paid_date ?? "—"} />
-                <Info label="Arrendatario" value={tenant} />
-                <Info label="Contacto" value={unit.tenant_contact ?? "—"} />
-                <Info label="Inicio contrato" value={unit.rent_start_date ?? "—"} />
-                <Info label="Notas" value={payment?.notes ?? unit.notes ?? "—"} />
-              </dl>
-            </div>
-          </SheetContent>
-        </Sheet>
       </div>
-
-      {/* Servicios de la propiedad (solo unidad principal) */}
-      {monitoring && orgId ? (
-        <UnitServicesIndicator
-          organizationId={orgId}
-          monitoring={monitoring}
-          period={servicesPeriod}
-          onSaved={onServicesSaved}
-        />
-      ) : null}
-    </Card>
+    </div>
   );
 }
+
 
 function Info({ label, value }: { label: string; value: string }) {
   return (

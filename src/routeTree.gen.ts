@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated.properties'
+import { Route as AuthenticatedDashboardV3RouteImport } from './routes/_authenticated.dashboard-v3'
 import { Route as AuthenticatedDashboardV2RouteImport } from './routes/_authenticated.dashboard-v2'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
@@ -58,6 +59,12 @@ const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
   path: '/properties',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDashboardV3Route =
+  AuthenticatedDashboardV3RouteImport.update({
+    id: '/dashboard-v3',
+    path: '/dashboard-v3',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardV2Route =
   AuthenticatedDashboardV2RouteImport.update({
     id: '/dashboard-v2',
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboard-v2': typeof AuthenticatedDashboardV2Route
+  '/dashboard-v3': typeof AuthenticatedDashboardV3Route
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
@@ -161,6 +169,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dashboard-v2': typeof AuthenticatedDashboardV2Route
+  '/dashboard-v3': typeof AuthenticatedDashboardV3Route
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/rent/import': typeof AuthenticatedRentImportRoute
   '/services/update': typeof AuthenticatedServicesUpdateRoute
@@ -181,6 +190,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dashboard-v2': typeof AuthenticatedDashboardV2Route
+  '/_authenticated/dashboard-v3': typeof AuthenticatedDashboardV3Route
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/properties/new': typeof AuthenticatedPropertiesNewRoute
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dashboard'
     | '/dashboard-v2'
+    | '/dashboard-v3'
     | '/properties'
     | '/settings'
     | '/properties/new'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dashboard'
     | '/dashboard-v2'
+    | '/dashboard-v3'
     | '/properties/new'
     | '/rent/import'
     | '/services/update'
@@ -242,6 +254,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard-v2'
+    | '/_authenticated/dashboard-v3'
     | '/_authenticated/properties'
     | '/_authenticated/settings'
     | '/_authenticated/properties/new'
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/properties'
       fullPath: '/properties'
       preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard-v3': {
+      id: '/_authenticated/dashboard-v3'
+      path: '/dashboard-v3'
+      fullPath: '/dashboard-v3'
+      preLoaderRoute: typeof AuthenticatedDashboardV3RouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard-v2': {
@@ -445,6 +465,7 @@ const AuthenticatedSettingsRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDashboardV2Route: typeof AuthenticatedDashboardV2Route
+  AuthenticatedDashboardV3Route: typeof AuthenticatedDashboardV3Route
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedRentImportRoute: typeof AuthenticatedRentImportRoute
@@ -455,6 +476,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDashboardV2Route: AuthenticatedDashboardV2Route,
+  AuthenticatedDashboardV3Route: AuthenticatedDashboardV3Route,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedRentImportRoute: AuthenticatedRentImportRoute,
