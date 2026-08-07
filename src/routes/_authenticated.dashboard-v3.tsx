@@ -496,133 +496,94 @@ function Dashboard() {
     return items;
   }, [lateCount, servicesMonitor.counts, unrentedUnits.length, expiredCount, expiringSoonCount]);
 
+  // Agrupación por propiedad, respetando el orden global ya calculado.
+  const groups: { property: Property | null; rows: typeof filteredRows }[] = [];
+  for (const r of filteredRows) {
+    const p = (r.unit.properties as Property | null) ?? null;
+    const last = groups[groups.length - 1];
+    if (last && (last.property?.id ?? "—") === (p?.id ?? "—")) last.rows.push(r);
+    else groups.push({ property: p, rows: [r] });
+  }
+
+  const attentionCards: AttentionItem[] = attentionItems.map((it) => ({
+    key: it.key,
+    count: it.count,
+    label: it.label,
+    to: it.to === "/dashboard" ? "/dashboard-v3" : it.to,
+    hash: it.hash,
+    tone: it.tone === "destructive" ? "danger" : it.tone,
+  }));
+
+  const rowActions = {
+    onConfirm: (unit: Unit) => void confirmPayment(unit),
+    onPartial: (unit: Unit, payment: RentPayment | null) => void partialPayment(unit, payment),
+    onUndo: (paymentId: string) => void undoConfirm(paymentId),
+    onEditAmount: (unit: Unit, payment: RentPayment | null) => void editExpectedAmount(unit, payment),
+    onClearReview: (paymentId: string) => void clearReview(paymentId),
+  };
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-4 md:px-6 md:py-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Estado del Patrimonio Inmobiliario</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {propertyCount} {propertyCount === 1 ? "propiedad" : "propiedades"} •{" "}
-            {allUnits.length} {allUnits.length === 1 ? "unidad" : "unidades"} •{" "}
-            {activeUnits.length} {activeUnits.length === 1 ? "arrendada" : "arrendadas"} •{" "}
-            {unrentedUnits.length} {unrentedUnits.length === 1 ? "vacante" : "vacantes"}
+    <div className="mx-auto max-w-6xl space-y-5 px-4 py-5 md:px-6 md:py-8">
+      {/* Encabezado */}
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display truncate text-xl font-bold tracking-tight md:text-2xl">
+            Estado del Patrimonio
+          </h1>
+          <p className="mt-1 truncate text-xs text-muted-foreground">
+            {propertyCount} {propertyCount === 1 ? "propiedad" : "propiedades"} · {allUnits.length}{" "}
+            {allUnits.length === 1 ? "unidad" : "unidades"} · {activeUnits.length} arrendadas ·{" "}
+            {unrentedUnits.length} vacantes
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link to="/rent/import">
+        <div className="flex shrink-0 items-center gap-2">
+          <Link to="/rent/import" className="hidden sm:block">
             <Button variant="outline" size="sm" className="h-8 gap-1.5">
               <FileUp className="h-4 w-4" /> Importar cartola
             </Button>
           </Link>
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setPeriod(addMonths(year, month, -1))}
-            aria-label="Mes anterior"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-[10ch] text-center text-sm font-medium">
-            {periodLabel(year, month)}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setPeriod(addMonths(year, month, 1))}
-            aria-label="Mes siguiente"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Flujo del mes — bloque principal, compacto */}
-      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <h2 className="text-sm font-semibold">Flujo del mes</h2>
-          {prev ? (
-            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              {deltaConfirmed >= 0 ? (
-                <TrendingUp className="h-3.5 w-3.5 text-success" />
-              ) : (
-                <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-              )}
-              {deltaConfirmed >= 0 ? "+" : ""}
-              {formatCLP(deltaConfirmed)}
-              {deltaPct != null ? ` (${deltaPct >= 0 ? "+" : ""}${deltaPct.toFixed(1)}%)` : ""}
-              {" vs "}
-              {shortPeriodLabel(prev.year, prev.month)}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="mt-2 flex items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2 text-[11px] text-muted-foreground">
-              <span>
-                Cobrado{" "}
-                <span className="font-semibold tabular-nums text-success">{formatCLP(totals.confirmed)}</span>{" "}
-                de <span className="tabular-nums text-foreground">{formatCLP(totals.expected)}</span>
-              </span>
-              <span className="text-base font-semibold tabular-nums text-foreground">{collectedPct}%</span>
-            </div>
-            <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-success transition-all"
-                style={{ width: `${Math.min(100, collectedPct)}%` }}
-              />
-            </div>
+          <div className="flex items-center rounded-full border border-border/70 bg-card p-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-full"
+              onClick={() => setPeriod(addMonths(year, month, -1))}
+              aria-label="Mes anterior"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="min-w-[10ch] text-center text-xs font-medium">{periodLabel(year, month)}</div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-full"
+              onClick={() => setPeriod(addMonths(year, month, 1))}
+              aria-label="Mes siguiente"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
+      </header>
 
-        <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border pt-2 sm:grid-cols-4">
-          <FlowItem label="Esperado" value={formatCLP(totals.expected)} />
-          <FlowItem label="Confirmado" value={formatCLP(totals.confirmed)} tone="success" />
-          <FlowItem label="Pendiente" value={formatCLP(totals.pending)} />
-          <FlowItem
-            label="Atrasado"
-            value={formatCLP(totals.overdue)}
-            tone={totals.overdue > 0 ? "destructive" : undefined}
-          />
-        </div>
-      </section>
+      {/* 1. Resumen del mes */}
+      <FlowCard
+        periodLabel={periodLabel(year, month)}
+        expected={totals.expected}
+        confirmed={totals.confirmed}
+        pending={totals.pending}
+        overdue={totals.overdue}
+        pct={collectedPct}
+        prev={prev ? { year: prev.year, month: prev.month } : null}
+        deltaConfirmed={deltaConfirmed}
+        deltaPct={deltaPct}
+      />
 
-      {/* Requiere atención */}
-      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
-        <h2 className="text-sm font-semibold">Requiere atención</h2>
-        {attentionItems.length === 0 ? (
-          <p className="mt-1.5 text-xs text-muted-foreground">No existen alertas este mes.</p>
-        ) : (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {attentionItems.map((it) => (
-              <Link
-                key={it.key}
-                to={it.to}
-                hash={it.hash}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs hover:opacity-90",
-                  it.tone === "destructive"
-                    ? "border-destructive/40 bg-destructive/10"
-                    : it.tone === "warning"
-                      ? "border-warning/40 bg-warning/10"
-                      : "border-border bg-muted/40",
-                )}
-              >
-                <span className="font-semibold tabular-nums text-foreground">{it.count}</span>
-                <span className="text-muted-foreground">{it.label}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      {/* 2. Requiere atención */}
+      <AttentionCard items={attentionCards} />
 
-      {/* 6-month comparison */}
-      <section className="mt-3 rounded-xl border border-border bg-card px-3 py-2.5">
-        <h2 className="text-sm font-semibold">Comparativo últimos 6 meses</h2>
-        <TrendChart data={trend} />
-      </section>
+      {/* 3. Tendencia */}
+      <TrendLine data={trend} />
 
       {/* Resumen ejecutivo de servicios */}
       <ServicesSummaryStrip
@@ -633,67 +594,56 @@ function Dashboard() {
 
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
 
-      {/* Rows */}
-      <section id="unidades" className="mt-3 scroll-mt-4">
-        <div className="flex items-end justify-between">
-          <h2 className="text-base font-semibold">Estado por unidad — {periodLabel(year, month)}</h2>
-          <Link to="/properties" className="text-sm text-muted-foreground hover:text-foreground">
-            Configurar arriendos →
-          </Link>
-        </div>
-
-        <div className="mt-2 flex items-center gap-2">
-          <Input
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filtrar por dirección, propiedad, unidad, arrendatario, monto…"
-            className="h-9"
-            aria-label="Filtrar unidades"
+      {/* 4. Estado por propiedad */}
+      <section id="unidades" className="scroll-mt-4 space-y-3">
+        <Panel className="pb-4">
+          <PanelHeader
+            title={`Estado por propiedad — ${periodLabel(year, month)}`}
+            hint={`${filteredRows.length} de ${rows.length} unidades`}
+            right={
+              <Link to="/properties" className="text-xs text-muted-foreground hover:text-foreground">
+                Configurar arriendos →
+              </Link>
+            }
           />
-          {filter ? (
-            <Button variant="ghost" size="sm" className="h-9 shrink-0 px-2 text-xs" onClick={() => setFilter("")}>
-              Limpiar
-            </Button>
-          ) : null}
-        </div>
-        <div className="mt-2 text-xs text-muted-foreground">
-          {filteredRows.length} de {rows.length} unidades
-        </div>
+          <div className="mt-3 flex items-center gap-2 px-5">
+            <Input
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filtrar por propiedad, unidad, arrendatario, monto…"
+              className="h-9"
+              aria-label="Filtrar unidades"
+            />
+            {filter ? (
+              <Button variant="ghost" size="sm" className="h-9 shrink-0 px-2 text-xs" onClick={() => setFilter("")}>
+                Limpiar
+              </Button>
+            ) : null}
+          </div>
+        </Panel>
 
         {unitsQuery.isLoading ? (
-          <div className="mt-4 rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
-            Cargando…
-          </div>
+          <Panel className="p-6 text-sm text-muted-foreground">Cargando…</Panel>
         ) : rows.length === 0 ? (
           <EmptyState />
         ) : filteredRows.length === 0 ? (
-          <div className="mt-6 rounded-xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
+          <Panel className="p-6 text-center text-sm text-muted-foreground">
             No hay unidades que coincidan con “{filter}”.
-          </div>
+          </Panel>
         ) : (
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredRows.map((r) => (
-              <PaymentRow
-                key={r.unit.id}
-                unit={r.unit}
-                property={r.unit.properties}
-                payment={r.payment}
-                status={r.status}
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {groups.map((g) => (
+              <PropertyGroup
+                key={g.property?.id ?? "sin-propiedad"}
+                property={g.property}
+                rows={g.rows}
                 year={year}
                 month={month}
-                onConfirm={() => confirmPayment(r.unit)}
-                onPartial={() => partialPayment(r.unit, r.payment)}
-                onUndo={r.payment ? () => undoConfirm(r.payment!.id) : undefined}
-                onEditAmount={() => editExpectedAmount(r.unit, r.payment)}
-                onClearReview={r.payment ? () => clearReview(r.payment!.id) : undefined}
                 orgId={orgId}
                 servicesPeriod={servicesMonitor.period}
-                monitoring={
-                  r.unit.properties && mainUnitIdByProperty.get(r.unit.properties.id) === r.unit.id
-                    ? servicesMonitor.byProperty.get(r.unit.properties.id) ?? null
-                    : null
-                }
+                monitoring={g.property ? servicesMonitor.byProperty.get(g.property.id) ?? null : null}
                 onServicesSaved={() => void servicesMonitor.refetch()}
+                actions={rowActions}
               />
             ))}
           </div>
@@ -702,6 +652,7 @@ function Dashboard() {
     </div>
   );
 }
+
 
 
 
