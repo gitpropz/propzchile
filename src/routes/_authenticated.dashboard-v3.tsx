@@ -465,7 +465,7 @@ function Dashboard() {
     }
   }
 
-  const isCurrent = year === currentPeriod().year && month === currentPeriod().month;
+  
 
   // Excepciones del mes: solo lo que requiere acción.
   const lateCount = useMemo(
