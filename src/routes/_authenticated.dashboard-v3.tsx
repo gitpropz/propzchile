@@ -207,16 +207,8 @@ function Dashboard() {
   // Monitoreo de servicios (misma lógica, nueva presentación).
   const servicesMonitor = useServicesMonitor(orgId);
 
-  /** Unidad principal (depto/casa) de cada propiedad: ahí vive el indicador de servicios. */
-  const mainUnitIdByProperty = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const u of allUnits) {
-      const pid = u.properties?.id;
-      if (!pid || map.has(pid)) continue;
-      if (u.unit_type === "apartment" || u.unit_type === "house") map.set(pid, u.id);
-    }
-    return map;
-  }, [allUnits]);
+  // En V3 el indicador de servicios vive en la tarjeta de la propiedad.
+
   const unrentedUnits = useMemo(() => allUnits.filter((u) => !u.rent_active), [allUnits]);
   const propertyCount = useMemo(
     () => new Set(allUnits.map((u) => u.properties?.id).filter(Boolean)).size,
