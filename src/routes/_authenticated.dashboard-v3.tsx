@@ -1,26 +1,40 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Eye, FileUp, Plus, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Eye,
+  FileUp,
+  MoreHorizontal,
+  Plus,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
 import { formatCLP, formatMoney } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { addManualAllocation, clearAllocations, ensureRentPayment } from "@/lib/rent-allocations";
 import {
-  MONTHS_ES,
   STATUS_META,
   addMonths,
   computeStatus,
   daysSinceDue,
   periodLabel,
-  shortPeriodLabel,
   toISODate,
   type PaymentStatus,
   type RentPayment,
@@ -28,9 +42,14 @@ import {
 import { useServicesMonitor } from "@/hooks/use-services-monitor";
 import { ServicesSummaryStrip } from "@/components/services-summary-strip";
 import { UnitServicesIndicator } from "@/components/unit-services-indicator";
+import { Panel, PanelHeader, ProgressLine } from "@/components/dashboard-v2/primitives";
+import { FlowCard } from "@/components/dashboard-v2/flow-card";
+import { AttentionCard, type AttentionItem } from "@/components/dashboard-v2/attention-card";
+import { TrendLine } from "@/components/dashboard-v2/trend-line";
 import type { PropertyMonitoring } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 import { evaluateLease } from "@/lib/lease-expiry";
+
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address" | "comuna">;
