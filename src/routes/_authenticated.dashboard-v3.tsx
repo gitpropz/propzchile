@@ -505,14 +505,17 @@ function Dashboard() {
     return items;
   }, [lateCount, servicesMonitor.counts, unrentedUnits.length, expiredCount, expiringSoonCount]);
 
-  // Agrupación por propiedad, respetando el orden global ya calculado.
-  const groups: { property: Property | null; rows: typeof filteredRows }[] = [];
+  // Agrupación por propiedad (una tarjeta por propiedad), respetando el orden global.
+  const groupIndex = new Map<string, { property: Property | null; rows: typeof filteredRows }>();
   for (const r of filteredRows) {
     const p = (r.unit.properties as Property | null) ?? null;
-    const last = groups[groups.length - 1];
-    if (last && (last.property?.id ?? "—") === (p?.id ?? "—")) last.rows.push(r);
-    else groups.push({ property: p, rows: [r] });
+    const key = p?.id ?? "sin-propiedad";
+    const existing = groupIndex.get(key);
+    if (existing) existing.rows.push(r);
+    else groupIndex.set(key, { property: p, rows: [r] });
   }
+  const groups = Array.from(groupIndex.values());
+
 
   const attentionCards: AttentionItem[] = attentionItems.map((it) => ({
     key: it.key,
