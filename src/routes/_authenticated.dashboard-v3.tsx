@@ -703,78 +703,7 @@ function Dashboard() {
   );
 }
 
-function FlowItem({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "success" | "destructive";
-}) {
-  return (
-    <div>
-      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div
-        className={
-          "mt-0.5 text-base font-semibold tabular-nums md:text-lg " +
-          (tone === "success"
-            ? "text-success"
-            : tone === "destructive"
-              ? "text-destructive"
-              : "text-foreground")
-        }
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
 
-
-function TrendChart({
-  data,
-}: {
-  data: { year: number; month: number; expected: number; confirmed: number }[];
-}) {
-  const max = Math.max(1, ...data.map((d) => Math.max(d.expected, d.confirmed)));
-  return (
-    <div className="mt-3 grid grid-cols-6 gap-2">
-      {data.map((d) => {
-        const expH = (d.expected / max) * 100;
-        const confH = (d.confirmed / max) * 100;
-        return (
-          <div key={`${d.year}-${d.month}`} className="flex flex-col items-center gap-1">
-            <div className="relative flex h-14 w-full items-end gap-1">
-              <div
-                className="w-1/2 rounded-t bg-muted"
-                style={{ height: `${expH}%` }}
-                title={`Esperado: ${formatCLP(d.expected)}`}
-              />
-              <div
-                className="w-1/2 rounded-t bg-primary"
-                style={{ height: `${confH}%` }}
-                title={`Confirmado: ${formatCLP(d.confirmed)}`}
-              />
-            </div>
-            <div className="text-[10px] text-muted-foreground">{MONTHS_ES[d.month - 1]}</div>
-            <div className="text-[10px] tabular-nums text-muted-foreground">
-              {formatCLP(d.confirmed)}
-            </div>
-          </div>
-        );
-      })}
-      <div className="col-span-6 mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-3 rounded-sm bg-muted" /> Esperado
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-3 rounded-sm bg-primary" /> Confirmado
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /** Grupo por propiedad: cabecera + unidades + servicios de la propiedad. */
 function PropertyGroup({
