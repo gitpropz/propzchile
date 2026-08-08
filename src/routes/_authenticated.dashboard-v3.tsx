@@ -631,7 +631,8 @@ function Dashboard() {
       />
 
       {/* 2. Requiere atención */}
-      <AttentionCard items={attentionCards} />
+      <AttentionCard items={attentionCards} onSelect={selectFocus} activeKey={focus} />
+
 
       {/* 3. Tendencia */}
       <TrendLine data={trend} />
