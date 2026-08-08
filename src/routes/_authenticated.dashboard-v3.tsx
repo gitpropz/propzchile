@@ -505,9 +505,37 @@ function Dashboard() {
     return items;
   }, [lateCount, servicesMonitor.counts, unrentedUnits.length, expiredCount, expiringSoonCount]);
 
+  // Foco: al pinchar un asunto en "Requiere atención" filtramos aquí mismo.
+  const [focus, setFocus] = useState<string | null>(null);
+  const focusedRows = useMemo(() => {
+    if (!focus) return filteredRows;
+    const propStatus = (r: (typeof filteredRows)[number]) => {
+      const pid = (r.unit.properties as Property | null)?.id;
+      return pid ? servicesMonitor.byProperty.get(pid)?.status ?? null : null;
+    };
+    return filteredRows.filter((r) => {
+      switch (focus) {
+        case "late":
+          return r.status === "late" || r.status === "warn";
+        case "vacant":
+          return !r.unit.rent_active;
+        case "expired":
+          return r.unit.rent_active && evaluateLease(true, (r.unit as any).rent_end_date).status === "expired";
+        case "expiring":
+          return r.unit.rent_active && evaluateLease(true, (r.unit as any).rent_end_date).status === "expiring";
+        case "svc-crit":
+          return propStatus(r) === "critical";
+        case "svc-unk":
+          return propStatus(r) === "unknown";
+        default:
+          return true;
+      }
+    });
+  }, [filteredRows, focus, servicesMonitor.byProperty]);
+
   // Agrupación por propiedad (una tarjeta por propiedad), respetando el orden global.
   const groupIndex = new Map<string, { property: Property | null; rows: typeof filteredRows }>();
-  for (const r of filteredRows) {
+  for (const r of focusedRows) {
     const p = (r.unit.properties as Property | null) ?? null;
     const key = p?.id ?? "sin-propiedad";
     const existing = groupIndex.get(key);
@@ -515,7 +543,6 @@ function Dashboard() {
     else groupIndex.set(key, { property: p, rows: [r] });
   }
   const groups = Array.from(groupIndex.values());
-
 
   const attentionCards: AttentionItem[] = attentionItems.map((it) => ({
     key: it.key,
@@ -525,6 +552,18 @@ function Dashboard() {
     hash: it.hash,
     tone: it.tone === "destructive" ? "danger" : it.tone,
   }));
+
+  const focusLabel = attentionItems.find((it) => it.key === focus)?.label ?? null;
+
+  function selectFocus(key: string) {
+    setFocus((prev) => (prev === key ? null : key));
+    if (typeof document !== "undefined") {
+      requestAnimationFrame(() => {
+        document.getElementById("unidades")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }
+
 
   const rowActions = {
     onConfirm: (unit: Unit) => void confirmPayment(unit),
@@ -592,7 +631,8 @@ function Dashboard() {
       />
 
       {/* 2. Requiere atención */}
-      <AttentionCard items={attentionCards} />
+      <AttentionCard items={attentionCards} onSelect={selectFocus} activeKey={focus} />
+
 
       {/* 3. Tendencia */}
       <TrendLine data={trend} />
@@ -611,7 +651,7 @@ function Dashboard() {
         <Panel className="pb-4">
           <PanelHeader
             title={`Estado por propiedad — ${periodLabel(year, month)}`}
-            hint={`${filteredRows.length} de ${rows.length} unidades`}
+            hint={`${focusedRows.length} de ${rows.length} unidades`}
             right={
               <Link to="/properties" className="text-xs text-muted-foreground hover:text-foreground">
                 Configurar arriendos →
@@ -632,17 +672,35 @@ function Dashboard() {
               </Button>
             ) : null}
           </div>
+          {focus ? (
+            <div className="mt-3 flex items-center gap-2 px-5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground">
+                Filtrando: {focusLabel ?? focus}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground"
+                onClick={() => setFocus(null)}
+              >
+                Ver todas
+              </Button>
+            </div>
+          ) : null}
         </Panel>
 
         {unitsQuery.isLoading ? (
           <Panel className="p-6 text-sm text-muted-foreground">Cargando…</Panel>
         ) : rows.length === 0 ? (
           <EmptyState />
-        ) : filteredRows.length === 0 ? (
+        ) : focusedRows.length === 0 ? (
           <Panel className="p-6 text-center text-sm text-muted-foreground">
-            No hay unidades que coincidan con “{filter}”.
+            {focus
+              ? "No hay unidades en esta condición con el filtro actual."
+              : `No hay unidades que coincidan con “${filter}”.`}
           </Panel>
         ) : (
+
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {groups.map((g, gi) => (
               <PropertyGroup

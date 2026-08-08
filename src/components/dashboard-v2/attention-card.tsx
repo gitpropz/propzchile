@@ -14,7 +14,16 @@ export type AttentionItem = {
 };
 
 /** Nivel 2 — solo lo accionable. Si no hay nada, se comunica calma. */
-export function AttentionCard({ items }: { items: AttentionItem[] }) {
+export function AttentionCard({
+  items,
+  onSelect,
+  activeKey,
+}: {
+  items: AttentionItem[];
+  /** Si se entrega, al pinchar se filtra en la misma página en vez de navegar. */
+  onSelect?: (key: string) => void;
+  activeKey?: string | null;
+}) {
   if (items.length === 0) {
     return (
       <Panel className="flex items-center gap-3 px-5 py-5">
@@ -35,13 +44,9 @@ export function AttentionCard({ items }: { items: AttentionItem[] }) {
         right={<AlertTriangle className="h-4 w-4 text-warning" strokeWidth={1.75} />}
       />
       <ul className="mt-3 px-2 pb-2">
-        {items.map((it) => (
-          <li key={it.key}>
-            <Link
-              to={it.to}
-              hash={it.hash}
-              className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-propz hover:bg-muted/60"
-            >
+        {items.map((it) => {
+          const inner = (
+            <>
               <span
                 className={cn(
                   "grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-semibold tabular",
@@ -52,12 +57,30 @@ export function AttentionCard({ items }: { items: AttentionItem[] }) {
               >
                 {it.count}
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm text-foreground">{it.label}</span>
+              <span className="min-w-0 flex-1 truncate text-left text-sm text-foreground">{it.label}</span>
               <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </li>
-        ))}
+            </>
+          );
+          const cls = cn(
+            "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-propz hover:bg-muted/60",
+            activeKey === it.key && "bg-muted",
+          );
+          return (
+            <li key={it.key}>
+              {onSelect ? (
+                <button type="button" onClick={() => onSelect(it.key)} className={cls} aria-pressed={activeKey === it.key}>
+                  {inner}
+                </button>
+              ) : (
+                <Link to={it.to} hash={it.hash} className={cls}>
+                  {inner}
+                </Link>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </Panel>
   );
 }
+
