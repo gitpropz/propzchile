@@ -651,7 +651,7 @@ function Dashboard() {
         <Panel className="pb-4">
           <PanelHeader
             title={`Estado por propiedad — ${periodLabel(year, month)}`}
-            hint={`${filteredRows.length} de ${rows.length} unidades`}
+            hint={`${focusedRows.length} de ${rows.length} unidades`}
             right={
               <Link to="/properties" className="text-xs text-muted-foreground hover:text-foreground">
                 Configurar arriendos →
@@ -672,17 +672,35 @@ function Dashboard() {
               </Button>
             ) : null}
           </div>
+          {focus ? (
+            <div className="mt-3 flex items-center gap-2 px-5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground">
+                Filtrando: {focusLabel ?? focus}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground"
+                onClick={() => setFocus(null)}
+              >
+                Ver todas
+              </Button>
+            </div>
+          ) : null}
         </Panel>
 
         {unitsQuery.isLoading ? (
           <Panel className="p-6 text-sm text-muted-foreground">Cargando…</Panel>
         ) : rows.length === 0 ? (
           <EmptyState />
-        ) : filteredRows.length === 0 ? (
+        ) : focusedRows.length === 0 ? (
           <Panel className="p-6 text-center text-sm text-muted-foreground">
-            No hay unidades que coincidan con “{filter}”.
+            {focus
+              ? "No hay unidades en esta condición con el filtro actual."
+              : `No hay unidades que coincidan con “${filter}”.`}
           </Panel>
         ) : (
+
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {groups.map((g, gi) => (
               <PropertyGroup
