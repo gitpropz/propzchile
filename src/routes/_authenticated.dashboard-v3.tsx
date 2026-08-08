@@ -505,9 +505,37 @@ function Dashboard() {
     return items;
   }, [lateCount, servicesMonitor.counts, unrentedUnits.length, expiredCount, expiringSoonCount]);
 
+  // Foco: al pinchar un asunto en "Requiere atención" filtramos aquí mismo.
+  const [focus, setFocus] = useState<string | null>(null);
+  const focusedRows = useMemo(() => {
+    if (!focus) return filteredRows;
+    const propStatus = (r: (typeof filteredRows)[number]) => {
+      const pid = (r.unit.properties as Property | null)?.id;
+      return pid ? servicesMonitor.byProperty.get(pid)?.status ?? null : null;
+    };
+    return filteredRows.filter((r) => {
+      switch (focus) {
+        case "late":
+          return r.status === "late" || r.status === "warn";
+        case "vacant":
+          return !r.unit.rent_active;
+        case "expired":
+          return r.unit.rent_active && evaluateLease(true, (r.unit as any).rent_end_date).status === "expired";
+        case "expiring":
+          return r.unit.rent_active && evaluateLease(true, (r.unit as any).rent_end_date).status === "expiring";
+        case "svc-crit":
+          return propStatus(r) === "critical";
+        case "svc-unk":
+          return propStatus(r) === "unknown";
+        default:
+          return true;
+      }
+    });
+  }, [filteredRows, focus, servicesMonitor.byProperty]);
+
   // Agrupación por propiedad (una tarjeta por propiedad), respetando el orden global.
   const groupIndex = new Map<string, { property: Property | null; rows: typeof filteredRows }>();
-  for (const r of filteredRows) {
+  for (const r of focusedRows) {
     const p = (r.unit.properties as Property | null) ?? null;
     const key = p?.id ?? "sin-propiedad";
     const existing = groupIndex.get(key);
@@ -515,7 +543,6 @@ function Dashboard() {
     else groupIndex.set(key, { property: p, rows: [r] });
   }
   const groups = Array.from(groupIndex.values());
-
 
   const attentionCards: AttentionItem[] = attentionItems.map((it) => ({
     key: it.key,
@@ -525,6 +552,18 @@ function Dashboard() {
     hash: it.hash,
     tone: it.tone === "destructive" ? "danger" : it.tone,
   }));
+
+  const focusLabel = attentionItems.find((it) => it.key === focus)?.label ?? null;
+
+  function selectFocus(key: string) {
+    setFocus((prev) => (prev === key ? null : key));
+    if (typeof document !== "undefined") {
+      requestAnimationFrame(() => {
+        document.getElementById("unidades")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }
+
 
   const rowActions = {
     onConfirm: (unit: Unit) => void confirmPayment(unit),
