@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Controla, automatiza y haz crecer tu patrimonio inmobiliario con una plataforma diseñada para inversionistas.",
+          "Propz es la plataforma inteligente para inversionistas inmobiliarios: controla, automatiza y haz crecer tu patrimonio desde un solo lugar.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
