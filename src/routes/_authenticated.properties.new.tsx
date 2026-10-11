@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useDraftState, clearDrafts } from "@/hooks/use-draft-state";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,13 +38,13 @@ function NewProperty() {
   const navigate = useNavigate();
   const org = useCurrentOrg();
 
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [comuna, setComuna] = useState("");
-  const [region, setRegion] = useState("");
-  const [type, setType] = useState<UnitType>("apartment");
-  const [notes, setNotes] = useState("");
-  const [units, setUnits] = useState<UnitDraft[]>([{ ...emptyUnit(), label: "Unidad principal" }]);
+  const [name, setName] = useDraftState("new-property:name", "");
+  const [address, setAddress] = useDraftState("new-property:address", "");
+  const [comuna, setComuna] = useDraftState("new-property:comuna", "");
+  const [region, setRegion] = useDraftState("new-property:region", "");
+  const [type, setType] = useDraftState<UnitType>("new-property:type", "apartment");
+  const [notes, setNotes] = useDraftState("new-property:notes", "");
+  const [units, setUnits] = useDraftState<UnitDraft[]>("new-property:units", [{ ...emptyUnit(), label: "Unidad principal" }]);
   const [saving, setSaving] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
 
@@ -108,6 +109,7 @@ function NewProperty() {
     }
 
     setSaving(false);
+    clearDrafts("new-property:");
     toast.success("Propiedad y unidades creadas");
     setCreatedId(property.id);
   }
