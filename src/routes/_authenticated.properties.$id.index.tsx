@@ -28,7 +28,7 @@ type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
   head: () => ({ meta: [{ title: "Propiedad — Propz" }] }),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { tab?: string; unit?: string } => ({
     tab: typeof search.tab === "string" ? search.tab : undefined,
     unit: typeof search.unit === "string" ? search.unit : undefined,
   }),
