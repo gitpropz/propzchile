@@ -382,7 +382,8 @@ function UnitsTab({
     const target = units.find((u) => u.id === focusUnitId);
     if (!target) return;
     focusedRef.current = focusUnitId;
-    startEdit(target);
+    // Keep a restored, unsaved draft for this unit instead of overwriting it.
+    if (!(editingId === focusUnitId && editDraft)) startEdit(target);
     requestAnimationFrame(() => {
       document.getElementById(`unit-${focusUnitId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
