@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDraftState, clearDrafts, hasDraft } from "@/hooks/use-draft-state";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,16 +31,20 @@ function EditProperty() {
     },
   });
 
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [comuna, setComuna] = useState("");
-  const [region, setRegion] = useState("");
-  const [type, setType] = useState<UnitType>("apartment");
-  const [notes, setNotes] = useState("");
+  const [name, setName] = useDraftState(`edit-property:${id}:name`, "");
+  const [address, setAddress] = useDraftState(`edit-property:${id}:address`, "");
+  const [comuna, setComuna] = useDraftState(`edit-property:${id}:comuna`, "");
+  const [region, setRegion] = useDraftState(`edit-property:${id}:region`, "");
+  const [type, setType] = useDraftState<UnitType>(`edit-property:${id}:type`, "apartment");
+  const [notes, setNotes] = useDraftState(`edit-property:${id}:notes`, "");
   const [saving, setSaving] = useState(false);
 
+  // Seed from the database only once, and never over a restored unsaved draft.
+  const seededRef = useRef(false);
   useEffect(() => {
-    if (query.data) {
+    if (query.data && !seededRef.current) {
+      seededRef.current = true;
+      if (["name", "address", "comuna", "region", "type", "notes"].some((f) => hasDraft(`edit-property:${id}:${f}`))) return;
       setName(query.data.name);
       setAddress(query.data.address);
       setComuna(query.data.comuna ?? "");
@@ -68,6 +73,7 @@ function EditProperty() {
       toast.error("No pudimos guardar los cambios", { description: error.message });
       return;
     }
+    clearDrafts(`edit-property:${id}:`);
     toast.success("Cambios guardados");
     navigate({ to: "/properties/$id", params: { id } });
   }

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { useDraftState } from "@/hooks/use-draft-state";
 import { ArrowLeft, Check, Copy, FileUp, Loader2, MapPin, Pencil, Plus, Trash2, WandSparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -239,27 +240,28 @@ function UnitsTab({
   onChange: () => void;
 }) {
 
-  const [adding, setAdding] = useState(false);
-  const [label, setLabel] = useState("");
-  const [unitType, setUnitType] = useState<UnitType>("apartment");
-  const [identifier, setIdentifier] = useState("");
-  const [rent, setRent] = useState("");
-  const [currency, setCurrency] = useState<Currency>("CLP");
-  const [paymentDay, setPaymentDay] = useState("5");
-  const [tenantName, setTenantName] = useState("");
-  const [tenantContact, setTenantContact] = useState("");
-  const [tenantEmail, setTenantEmail] = useState("");
-  const [tenantRut, setTenantRut] = useState("");
-  const [rentActive, setRentActive] = useState(false);
-  const [rentStart, setRentStart] = useState("");
-  const [rentEnd, setRentEnd] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const draftKey = `unit-editor:${propertyId}`;
+  const [adding, setAdding] = useDraftState(`${draftKey}:adding`, false);
+  const [label, setLabel] = useDraftState(`${draftKey}:label`, "");
+  const [unitType, setUnitType] = useDraftState<UnitType>(`${draftKey}:unitType`, "apartment");
+  const [identifier, setIdentifier] = useDraftState(`${draftKey}:identifier`, "");
+  const [rent, setRent] = useDraftState(`${draftKey}:rent`, "");
+  const [currency, setCurrency] = useDraftState<Currency>(`${draftKey}:currency`, "CLP");
+  const [paymentDay, setPaymentDay] = useDraftState(`${draftKey}:paymentDay`, "5");
+  const [tenantName, setTenantName] = useDraftState(`${draftKey}:tenantName`, "");
+  const [tenantContact, setTenantContact] = useDraftState(`${draftKey}:tenantContact`, "");
+  const [tenantEmail, setTenantEmail] = useDraftState(`${draftKey}:tenantEmail`, "");
+  const [tenantRut, setTenantRut] = useDraftState(`${draftKey}:tenantRut`, "");
+  const [rentActive, setRentActive] = useDraftState(`${draftKey}:rentActive`, false);
+  const [rentStart, setRentStart] = useDraftState(`${draftKey}:rentStart`, "");
+  const [rentEnd, setRentEnd] = useDraftState(`${draftKey}:rentEnd`, "");
+  const [editingId, setEditingId] = useDraftState<string | null>(`${draftKey}:editingId`, null);
   const splitList = (s: string) =>
     s
       .split(/[\n,;]+/)
       .map((v) => v.trim())
       .filter(Boolean);
-  const [editDraft, setEditDraft] = useState<{
+  const [editDraft, setEditDraft] = useDraftState<{
     label: string;
     unit_type: UnitType;
     identifier: string;
@@ -276,7 +278,7 @@ function UnitsTab({
     rent_active: boolean;
     rent_start_date: string;
     rent_end_date: string;
-  } | null>(null);
+  } | null>(`${draftKey}:editDraft`, null);
   const [leaseReading, setLeaseReading] = useState(false);
 
   function fileToDataUrl(file: File): Promise<string> {
@@ -380,7 +382,8 @@ function UnitsTab({
     const target = units.find((u) => u.id === focusUnitId);
     if (!target) return;
     focusedRef.current = focusUnitId;
-    startEdit(target);
+    // Keep a restored, unsaved draft for this unit instead of overwriting it.
+    if (!(editingId === focusUnitId && editDraft)) startEdit(target);
     requestAnimationFrame(() => {
       document.getElementById(`unit-${focusUnitId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
