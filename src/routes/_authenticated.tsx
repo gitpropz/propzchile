@@ -14,7 +14,19 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user };
   },
   component: AuthedLayout,
+  // Shown while the session is checked after the browser reloads the tab
+  // (e.g. returning from another app on mobile) instead of a blank screen.
+  pendingComponent: AuthedPending,
+  pendingMs: 0,
 });
+
+function AuthedPending() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+    </div>
+  );
+}
 
 function AuthedLayout() {
   return (
