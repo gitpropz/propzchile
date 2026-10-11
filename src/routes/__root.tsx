@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -128,9 +128,20 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
 
+  const lastUserIdRef = useRef<string | null | undefined>(undefined);
+
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      const userId = session?.user.id ?? null;
+      // Ignore token refreshes / re-focus events for the same user: invalidating
+      // the router here remounts the tree and wipes unsaved form state.
+      if (lastUserIdRef.current === undefined) {
+        lastUserIdRef.current = userId;
+        return;
+      }
+      if (event !== "SIGNED_OUT" && userId === lastUserIdRef.current) return;
+      lastUserIdRef.current = userId;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });
