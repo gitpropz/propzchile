@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Service import labels resolve explicit service units first, then show the property's non-ancillary units as context without changing stored associations; this distinguishes similarly named properties while preserving matching logic.

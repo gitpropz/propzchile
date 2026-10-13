@@ -25,6 +25,7 @@ import {
 import type { Database } from "@/integrations/supabase/types";
 
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address">;
+type Unit = Pick<Database["public"]["Tables"]["rentable_units"]["Row"], "id" | "property_id" | "label" | "unit_type">;
 
 type ReviewRow = {
   id: string;
@@ -46,6 +47,10 @@ export const Route = createFileRoute("/_authenticated/services/update")({
         content:
           "Carga pantallazos de Servipag, PDF o imágenes y Propz actualiza automáticamente los servicios monitoreados de tus propiedades.",
       },
+      { property: "og:title", content: "Actualizar servicios — Propz" },
+      { property: "og:description", content: "Revisa los servicios importados e identifica su propiedad y unidad antes de actualizar el monitoreo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: UpdateServicesPage,
@@ -73,10 +78,11 @@ function UpdateServicesPage() {
   const propertiesQuery = useQuery({
     queryKey: ["svc-properties", orgId],
     queryFn: async (): Promise<Property[]> => {
+      if (!orgId) return [];
       const { data, error } = await supabase
         .from("properties")
         .select("id,name,address")
-        .eq("organization_id", orgId!)
+        .eq("organization_id", orgId)
         .order("name");
       if (error) throw error;
       return data ?? [];
@@ -87,10 +93,26 @@ function UpdateServicesPage() {
   const servicesQuery = useQuery({
     queryKey: ["svc-all-services", orgId],
     queryFn: async (): Promise<MonitoredService[]> => {
+      if (!orgId) return [];
       const { data, error } = await supabase
         .from("monitored_services")
         .select("*")
-        .eq("organization_id", orgId!);
+        .eq("organization_id", orgId);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!orgId,
+  });
+
+  const unitsQuery = useQuery({
+    queryKey: ["svc-units", orgId],
+    queryFn: async (): Promise<Unit[]> => {
+      if (!orgId) return [];
+      const { data, error } = await supabase
+        .from("rentable_units")
+        .select("id,property_id,label,unit_type")
+        .eq("organization_id", orgId)
+        .order("label");
       if (error) throw error;
       return data ?? [];
     },
@@ -103,10 +125,32 @@ function UpdateServicesPage() {
     [propertiesQuery.data],
   );
   const serviceById = useMemo(() => new Map(services.map((s) => [s.id, s])), [services]);
+  const unitById = useMemo(
+    () => new Map((unitsQuery.data ?? []).map((u) => [u.id, u])),
+    [unitsQuery.data],
+  );
+  const unitsByProperty = useMemo(() => {
+    const index = new Map<string, Unit[]>();
+    for (const unit of unitsQuery.data ?? []) {
+      const group = index.get(unit.property_id) ?? [];
+      group.push(unit);
+      index.set(unit.property_id, group);
+    }
+    return index;
+  }, [unitsQuery.data]);
 
   function serviceLabel(s: MonitoredService) {
-    const prop = s.property_id ? propertyById.get(s.property_id) : null;
-    return `${prop?.name ?? "Propiedad"} · ${serviceTypeLabel(s.service_type)}${s.provider ? ` (${s.provider})` : ""}`;
+    const linkedUnit = s.unit_id ? unitById.get(s.unit_id) : undefined;
+    const propertyId = s.property_id ?? linkedUnit?.property_id;
+    const prop = propertyId ? propertyById.get(propertyId) : undefined;
+    const propertyUnits = propertyId ? unitsByProperty.get(propertyId) ?? [] : [];
+    const mainUnits = propertyUnits.filter((u) => u.unit_type !== "parking" && u.unit_type !== "storage");
+    // Property-wide services show the main unit as context, not a new unit assignment.
+    const contextUnits = linkedUnit ? [linkedUnit] : mainUnits.length > 0 ? mainUnits : propertyUnits;
+    const unitLabel = contextUnits.length > 0
+      ? contextUnits.map((u) => u.label).join(" / ")
+      : unitsQuery.isError ? "Unidad no disponible" : unitsQuery.isPending ? "Cargando unidad…" : "Sin unidad registrada";
+    return `${prop?.name ?? "Propiedad"} · ${unitLabel} · ${serviceTypeLabel(s.service_type)}${s.provider ? ` (${s.provider})` : ""}${s.service_identifier ? ` · N° ${s.service_identifier}` : ""}`;
   }
 
   async function handleFiles(files: File[]) {
@@ -200,7 +244,8 @@ function UpdateServicesPage() {
       if (batchError) throw batchError;
 
       for (const row of toApply) {
-        const service = serviceById.get(row.serviceId!);
+        if (!row.serviceId) continue;
+        const service = serviceById.get(row.serviceId);
         if (!service?.property_id) continue;
         await saveReading({
           organizationId: orgId,
@@ -349,11 +394,11 @@ function UpdateServicesPage() {
                       value={r.serviceId ?? "none"}
                       onValueChange={(v) => updateRow(r.id, { serviceId: v === "none" ? null : v, auto: false })}
                     >
-                      <SelectTrigger className="h-9"><SelectValue placeholder="Sin asociar" /></SelectTrigger>
-                      <SelectContent>
+                       <SelectTrigger aria-label="Servicio de la propiedad" className="h-auto min-h-9 whitespace-normal text-left [&>span]:line-clamp-none [&>span]:min-w-0 [&>span]:break-words [&>svg]:shrink-0"><SelectValue placeholder="Sin asociar" /></SelectTrigger>
+                       <SelectContent className="max-w-[calc(100vw-2rem)]">
                         <SelectItem value="none">Sin asociar</SelectItem>
                         {services.filter((s) => s.active).map((s) => (
-                          <SelectItem key={s.id} value={s.id}>{serviceLabel(s)}</SelectItem>
+                           <SelectItem key={s.id} value={s.id} textValue={serviceLabel(s)} className="whitespace-normal break-words">{serviceLabel(s)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
