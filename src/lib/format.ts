@@ -7,6 +7,19 @@ export function formatCLP(amount: number | null | undefined): string {
   }).format(amount);
 }
 
+/** Abbreviated CLP for tight chart labels: $1,2M · $850K · $0 */
+export function formatCLPCompact(amount: number | null | undefined): string {
+  if (amount == null) return "—";
+  const n = Number(amount);
+  if (n >= 1_000_000) {
+    const m = n / 1_000_000;
+    const s = m >= 10 ? m.toFixed(0) : m.toFixed(1).replace(".", ",");
+    return `$${s.replace(",0", "")}M`;
+  }
+  if (n >= 1_000) return `$${Math.round(n / 1_000)}K`;
+  return `$${Math.round(n)}`;
+}
+
 export function formatMoney(amount: number | null | undefined, currency: string | null | undefined): string {
   if (amount == null) return "—";
   if (currency === "UF") {
