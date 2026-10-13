@@ -9,7 +9,7 @@ import { UNIT_TYPE_LABELS } from "@/lib/property-types";
 import type { Database } from "@/integrations/supabase/types";
 
 type PropertyRow = Database["public"]["Tables"]["properties"]["Row"] & {
-  rentable_units: { id: string }[];
+  rentable_units: { id: string; label: string }[];
 };
 
 export const Route = createFileRoute("/_authenticated/properties/")({
@@ -25,7 +25,7 @@ function PropertiesIndex() {
     queryFn: async (): Promise<PropertyRow[]> => {
       const { data, error } = await supabase
         .from("properties")
-        .select("*, rentable_units(id)")
+        .select("*, rentable_units(id, label)")
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -78,8 +78,23 @@ function PropertiesIndex() {
                     {p.comuna ? `, ${p.comuna}` : ""}
                   </span>
                 </div>
-                <div className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
-                  {p.rentable_units.length} {p.rentable_units.length === 1 ? "unidad arrendable" : "unidades arrendables"}
+                <div className="mt-4 border-t border-border pt-3">
+                  <div className="text-xs text-muted-foreground">
+                    {p.rentable_units.length}{" "}
+                    {p.rentable_units.length === 1 ? "unidad arrendable" : "unidades arrendables"}
+                  </div>
+                  {p.rentable_units.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {p.rentable_units.map((u) => (
+                        <span
+                          key={u.id}
+                          className="rounded-md bg-secondary px-1.5 py-0.5 text-[11px] font-medium text-secondary-foreground"
+                        >
+                          {u.label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </Link>
             ))}
