@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
-import { formatCLP, formatMoney } from "@/lib/format";
+import { formatCLP, formatCLPCompact, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { addManualAllocation, clearAllocations, ensureRentPayment } from "@/lib/rent-allocations";
 import {
