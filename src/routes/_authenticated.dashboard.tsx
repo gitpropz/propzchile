@@ -759,7 +759,7 @@ function TrendChart({
         </div>
       </div>
       <p className="col-span-6 text-[10px] leading-tight text-muted-foreground/70">
-        Cifras abreviadas — toca una barra para ver el monto completo.
+        Cifras abreviadas (M = millones de pesos).
       </p>
     </div>
   );
