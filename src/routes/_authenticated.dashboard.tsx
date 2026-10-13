@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
-import { formatCLP, formatMoney } from "@/lib/format";
+import { formatCLP, formatCLPCompact, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { addManualAllocation, clearAllocations, ensureRentPayment } from "@/lib/rent-allocations";
 import {
@@ -720,13 +720,13 @@ function TrendChart({
 }) {
   const max = Math.max(1, ...data.map((d) => Math.max(d.expected, d.confirmed)));
   return (
-    <div className="mt-3 grid grid-cols-6 gap-2">
+    <div className="mt-3 grid grid-cols-6 gap-1.5">
       {data.map((d) => {
         const expH = (d.expected / max) * 100;
         const confH = (d.confirmed / max) * 100;
         return (
-          <div key={`${d.year}-${d.month}`} className="flex flex-col items-center gap-1">
-            <div className="relative flex h-14 w-full items-end gap-1">
+          <div key={`${d.year}-${d.month}`} className="flex min-w-0 flex-col items-center gap-1">
+            <div className="relative flex h-14 w-full items-end gap-0.5">
               <div
                 className="w-1/2 rounded-t bg-muted"
                 style={{ height: `${expH}%` }}
@@ -738,9 +738,14 @@ function TrendChart({
                 title={`Confirmado: ${formatCLP(d.confirmed)}`}
               />
             </div>
-            <div className="text-[10px] text-muted-foreground">{MONTHS_ES[d.month - 1]}</div>
-            <div className="text-[10px] tabular-nums text-muted-foreground">
-              {formatCLP(d.confirmed)}
+            <div className="text-[10px] leading-none text-muted-foreground">{MONTHS_ES[d.month - 1]}</div>
+            <div className="flex w-full min-w-0 flex-col items-center gap-0.5 leading-none">
+              <span className="max-w-full truncate text-[10px] tabular-nums text-muted-foreground" title={`Esperado: ${formatCLP(d.expected)}`}>
+                {formatCLPCompact(d.expected)}
+              </span>
+              <span className="max-w-full truncate text-[10px] font-semibold tabular-nums text-primary" title={`Confirmado: ${formatCLP(d.confirmed)}`}>
+                {formatCLPCompact(d.confirmed)}
+              </span>
             </div>
           </div>
         );
@@ -753,6 +758,9 @@ function TrendChart({
           <span className="inline-block h-2 w-3 rounded-sm bg-primary" /> Confirmado
         </div>
       </div>
+      <p className="col-span-6 text-[10px] leading-tight text-muted-foreground/70">
+        Cifras abreviadas (M = millones de pesos).
+      </p>
     </div>
   );
 }
