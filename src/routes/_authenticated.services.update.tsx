@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, FileUp, Loader2, Sparkles, Trash2 } from "lucide-react";
 
@@ -139,7 +139,7 @@ function UpdateServicesPage() {
     return index;
   }, [unitsQuery.data]);
 
-  function serviceLabel(s: MonitoredService) {
+  const serviceLabel = useCallback((s: MonitoredService) => {
     const linkedUnit = s.unit_id ? unitById.get(s.unit_id) : undefined;
     const propertyId = s.property_id ?? linkedUnit?.property_id;
     const prop = propertyId ? propertyById.get(propertyId) : undefined;
@@ -151,7 +151,16 @@ function UpdateServicesPage() {
       ? contextUnits.map((u) => u.label).join(" / ")
       : unitsQuery.isError ? "Unidad no disponible" : unitsQuery.isPending ? "Cargando unidad…" : "Sin unidad registrada";
     return `${prop?.name ?? "Propiedad"} · ${unitLabel} · ${serviceTypeLabel(s.service_type)}${s.provider ? ` (${s.provider})` : ""}${s.service_identifier ? ` · N° ${s.service_identifier}` : ""}`;
-  }
+  }, [unitById, propertyById, unitsByProperty, unitsQuery.isError, unitsQuery.isPending]);
+
+  // Alphabetical so the picker is scannable and keyboard type-ahead lands on the right service.
+  const serviceOptions = useMemo(() => {
+    const collator = new Intl.Collator("es", { sensitivity: "base", numeric: true });
+    return services
+      .filter((s) => s.active)
+      .map((s) => ({ id: s.id, label: serviceLabel(s) }))
+      .sort((a, b) => collator.compare(a.label, b.label));
+  }, [services, serviceLabel]);
 
   async function handleFiles(files: File[]) {
     if (!files.length) return;
@@ -396,10 +405,10 @@ function UpdateServicesPage() {
                     >
                        <SelectTrigger aria-label="Servicio de la propiedad" className="h-auto min-h-9 whitespace-normal text-left [&>span]:line-clamp-none [&>span]:min-w-0 [&>span]:break-words [&>svg]:shrink-0"><SelectValue placeholder="Sin asociar" /></SelectTrigger>
                        <SelectContent className="max-w-[calc(100vw-2rem)]">
-                        <SelectItem value="none">Sin asociar</SelectItem>
-                        {services.filter((s) => s.active).map((s) => (
-                           <SelectItem key={s.id} value={s.id} textValue={serviceLabel(s)} className="whitespace-normal break-words">{serviceLabel(s)}</SelectItem>
-                        ))}
+                         <SelectItem value="none">Sin asociar</SelectItem>
+                         {serviceOptions.map((s) => (
+                            <SelectItem key={s.id} value={s.id} textValue={s.label} className="whitespace-normal break-words">{s.label}</SelectItem>
+                         ))}
                       </SelectContent>
                     </Select>
                   </div>
