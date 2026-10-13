@@ -9,7 +9,7 @@ import { UNIT_TYPE_LABELS } from "@/lib/property-types";
 import type { Database } from "@/integrations/supabase/types";
 
 type PropertyRow = Database["public"]["Tables"]["properties"]["Row"] & {
-  rentable_units: { id: string }[];
+  rentable_units: { id: string; label: string }[];
 };
 
 export const Route = createFileRoute("/_authenticated/properties/")({
@@ -25,7 +25,7 @@ function PropertiesIndex() {
     queryFn: async (): Promise<PropertyRow[]> => {
       const { data, error } = await supabase
         .from("properties")
-        .select("*, rentable_units(id)")
+        .select("*, rentable_units(id, label)")
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
