@@ -9,34 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
-import { Route as AuthenticatedDashboardV2RouteImport } from './routes/_authenticated.dashboard-v2'
-import { Route as AuthenticatedDashboardV3RouteImport } from './routes/_authenticated.dashboard-v3'
-import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated.properties'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
-import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated.contracts.index'
-import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated.properties.index'
-import { Route as AuthenticatedPropertiesNewRouteImport } from './routes/_authenticated.properties.new'
-import { Route as AuthenticatedRentImportRouteImport } from './routes/_authenticated.rent.import'
-import { Route as AuthenticatedServicesUpdateRouteImport } from './routes/_authenticated.services.update'
+import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated.properties'
+import { Route as AuthenticatedDashboardV3RouteImport } from './routes/_authenticated.dashboard-v3'
+import { Route as AuthenticatedDashboardV2RouteImport } from './routes/_authenticated.dashboard-v2'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
-import { Route as AuthenticatedSettingsOrganizationRouteImport } from './routes/_authenticated.settings.organization'
-import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated.settings.profile'
+import { Route as AuthenticatedPropertiesIndexRouteImport } from './routes/_authenticated.properties.index'
+import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated.contracts.index'
 import { Route as AuthenticatedSettingsTeamRouteImport } from './routes/_authenticated.settings.team'
+import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated.settings.profile'
+import { Route as AuthenticatedSettingsOrganizationRouteImport } from './routes/_authenticated.settings.organization'
+import { Route as AuthenticatedServicesUpdateRouteImport } from './routes/_authenticated.services.update'
+import { Route as AuthenticatedRentImportRouteImport } from './routes/_authenticated.rent.import'
+import { Route as AuthenticatedPropertiesNewRouteImport } from './routes/_authenticated.properties.new'
 import { Route as AuthenticatedPropertiesIdIndexRouteImport } from './routes/_authenticated.properties.$id.index'
 import { Route as AuthenticatedPropertiesIdEditRouteImport } from './routes/_authenticated.properties.$id.edit'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -44,43 +40,47 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedDashboardV2Route =
-  AuthenticatedDashboardV2RouteImport.update({
-    id: '/dashboard-v2',
-    path: '/dashboard-v2',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedDashboardV3Route =
-  AuthenticatedDashboardV3RouteImport.update({
-    id: '/dashboard-v3',
-    path: '/dashboard-v3',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
-  id: '/properties',
-  path: '/properties',
-  getParentRoute: () => AuthenticatedRoute,
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedContractsIndexRoute =
-  AuthenticatedContractsIndexRouteImport.update({
-    id: '/contracts/',
-    path: '/contracts/',
+const AuthenticatedPropertiesRoute = AuthenticatedPropertiesRouteImport.update({
+  id: '/properties',
+  path: '/properties',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDashboardV3Route =
+  AuthenticatedDashboardV3RouteImport.update({
+    id: '/dashboard-v3',
+    path: '/dashboard-v3',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDashboardV2Route =
+  AuthenticatedDashboardV2RouteImport.update({
+    id: '/dashboard-v2',
+    path: '/dashboard-v2',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedPropertiesIndexRoute =
   AuthenticatedPropertiesIndexRouteImport.update({
@@ -88,33 +88,16 @@ const AuthenticatedPropertiesIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedPropertiesRoute,
   } as any)
-const AuthenticatedPropertiesNewRoute =
-  AuthenticatedPropertiesNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => AuthenticatedPropertiesRoute,
-  } as any)
-const AuthenticatedRentImportRoute = AuthenticatedRentImportRouteImport.update({
-  id: '/rent/import',
-  path: '/rent/import',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedServicesUpdateRoute =
-  AuthenticatedServicesUpdateRouteImport.update({
-    id: '/services/update',
-    path: '/services/update',
+const AuthenticatedContractsIndexRoute =
+  AuthenticatedContractsIndexRouteImport.update({
+    id: '/contracts/',
+    path: '/contracts/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedSettingsOrganizationRoute =
-  AuthenticatedSettingsOrganizationRouteImport.update({
-    id: '/organization',
-    path: '/organization',
+const AuthenticatedSettingsTeamRoute =
+  AuthenticatedSettingsTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsProfileRoute =
@@ -123,11 +106,28 @@ const AuthenticatedSettingsProfileRoute =
     path: '/profile',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
-const AuthenticatedSettingsTeamRoute =
-  AuthenticatedSettingsTeamRouteImport.update({
-    id: '/team',
-    path: '/team',
+const AuthenticatedSettingsOrganizationRoute =
+  AuthenticatedSettingsOrganizationRouteImport.update({
+    id: '/organization',
+    path: '/organization',
     getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedServicesUpdateRoute =
+  AuthenticatedServicesUpdateRouteImport.update({
+    id: '/services/update',
+    path: '/services/update',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRentImportRoute = AuthenticatedRentImportRouteImport.update({
+  id: '/rent/import',
+  path: '/rent/import',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPropertiesNewRoute =
+  AuthenticatedPropertiesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedPropertiesRoute,
   } as any)
 const AuthenticatedPropertiesIdIndexRoute =
   AuthenticatedPropertiesIdIndexRouteImport.update({
@@ -279,18 +279,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -300,32 +293,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard-v2': {
-      id: '/_authenticated/dashboard-v2'
-      path: '/dashboard-v2'
-      fullPath: '/dashboard-v2'
-      preLoaderRoute: typeof AuthenticatedDashboardV2RouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/dashboard-v3': {
-      id: '/_authenticated/dashboard-v3'
-      path: '/dashboard-v3'
-      fullPath: '/dashboard-v3'
-      preLoaderRoute: typeof AuthenticatedDashboardV3RouteImport
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/properties': {
@@ -335,46 +321,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPropertiesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+    '/_authenticated/dashboard-v3': {
+      id: '/_authenticated/dashboard-v3'
+      path: '/dashboard-v3'
+      fullPath: '/dashboard-v3'
+      preLoaderRoute: typeof AuthenticatedDashboardV3RouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/contracts/': {
-      id: '/_authenticated/contracts/'
-      path: '/contracts'
-      fullPath: '/contracts/'
-      preLoaderRoute: typeof AuthenticatedContractsIndexRouteImport
+    '/_authenticated/dashboard-v2': {
+      id: '/_authenticated/dashboard-v2'
+      path: '/dashboard-v2'
+      fullPath: '/dashboard-v2'
+      preLoaderRoute: typeof AuthenticatedDashboardV2RouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/properties/': {
-      id: '/_authenticated/properties/'
-      path: '/'
-      fullPath: '/properties/'
-      preLoaderRoute: typeof AuthenticatedPropertiesIndexRouteImport
-      parentRoute: typeof AuthenticatedPropertiesRoute
-    }
-    '/_authenticated/properties/new': {
-      id: '/_authenticated/properties/new'
-      path: '/new'
-      fullPath: '/properties/new'
-      preLoaderRoute: typeof AuthenticatedPropertiesNewRouteImport
-      parentRoute: typeof AuthenticatedPropertiesRoute
-    }
-    '/_authenticated/rent/import': {
-      id: '/_authenticated/rent/import'
-      path: '/rent/import'
-      fullPath: '/rent/import'
-      preLoaderRoute: typeof AuthenticatedRentImportRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/services/update': {
-      id: '/_authenticated/services/update'
-      path: '/services/update'
-      fullPath: '/services/update'
-      preLoaderRoute: typeof AuthenticatedServicesUpdateRouteImport
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings/': {
@@ -384,11 +349,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/_authenticated/settings/organization': {
-      id: '/_authenticated/settings/organization'
-      path: '/organization'
-      fullPath: '/settings/organization'
-      preLoaderRoute: typeof AuthenticatedSettingsOrganizationRouteImport
+    '/_authenticated/properties/': {
+      id: '/_authenticated/properties/'
+      path: '/'
+      fullPath: '/properties/'
+      preLoaderRoute: typeof AuthenticatedPropertiesIndexRouteImport
+      parentRoute: typeof AuthenticatedPropertiesRoute
+    }
+    '/_authenticated/contracts/': {
+      id: '/_authenticated/contracts/'
+      path: '/contracts'
+      fullPath: '/contracts/'
+      preLoaderRoute: typeof AuthenticatedContractsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/team': {
+      id: '/_authenticated/settings/team'
+      path: '/team'
+      fullPath: '/settings/team'
+      preLoaderRoute: typeof AuthenticatedSettingsTeamRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/profile': {
@@ -398,12 +377,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/_authenticated/settings/team': {
-      id: '/_authenticated/settings/team'
-      path: '/team'
-      fullPath: '/settings/team'
-      preLoaderRoute: typeof AuthenticatedSettingsTeamRouteImport
+    '/_authenticated/settings/organization': {
+      id: '/_authenticated/settings/organization'
+      path: '/organization'
+      fullPath: '/settings/organization'
+      preLoaderRoute: typeof AuthenticatedSettingsOrganizationRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/services/update': {
+      id: '/_authenticated/services/update'
+      path: '/services/update'
+      fullPath: '/services/update'
+      preLoaderRoute: typeof AuthenticatedServicesUpdateRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/rent/import': {
+      id: '/_authenticated/rent/import'
+      path: '/rent/import'
+      fullPath: '/rent/import'
+      preLoaderRoute: typeof AuthenticatedRentImportRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/properties/new': {
+      id: '/_authenticated/properties/new'
+      path: '/new'
+      fullPath: '/properties/new'
+      preLoaderRoute: typeof AuthenticatedPropertiesNewRouteImport
+      parentRoute: typeof AuthenticatedPropertiesRoute
     }
     '/_authenticated/properties/$id/': {
       id: '/_authenticated/properties/$id/'
