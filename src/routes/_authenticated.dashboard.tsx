@@ -31,6 +31,7 @@ import { UnitServicesIndicator } from "@/components/unit-services-indicator";
 import type { PropertyMonitoring } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 import { evaluateLease } from "@/lib/lease-expiry";
+import { groupDashboardUnits } from "@/lib/dashboard-unit-groups";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address" | "comuna">;
@@ -60,7 +61,14 @@ function unitTypeRank(t: string | null | undefined): number {
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Estado del Patrimonio Inmobiliario — Propz" }] }),
+  head: () => ({ meta: [
+    { title: "Dashboard de arriendos y servicios — Propz" },
+    { name: "description", content: "Resumen mensual de arriendos, pagos y servicios de tus propiedades en Propz." },
+    { property: "og:title", content: "Dashboard de arriendos y servicios — Propz" },
+    { property: "og:description", content: "Resumen mensual de arriendos, pagos y servicios de tus propiedades en Propz." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Dashboard,
 });
 
@@ -245,17 +253,19 @@ function Dashboard() {
   }, [allUnits, paymentsByKey, year, month]);
 
   const [filter, setFilter] = useState("");
+  const groupedRows = useMemo(() => groupDashboardUnits(rows), [rows]);
   const filteredRows = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    if (!q) return rows;
+    if (!q) return groupedRows;
     const terms = q.split(/\s+/);
-    return rows.filter((r) => {
+    return groupedRows.filter(({ row: r, includedUnits }) => {
       const p = r.unit.properties as Property | null;
       const hay = [
         p?.name,
         p?.address,
         p?.comuna,
         r.unit.label,
+        ...includedUnits.map((u) => u.label),
         r.unit.tenant_name,
         (r.unit as any).tenant_rut,
         STATUS_META[r.status].label,
@@ -268,7 +278,7 @@ function Dashboard() {
         .toLowerCase();
       return terms.every((t) => hay.includes(t));
     });
-  }, [rows, filter]);
+  }, [groupedRows, filter]);
 
 
 
@@ -638,7 +648,7 @@ function Dashboard() {
           ) : null}
         </div>
         <div className="mt-2 text-xs text-muted-foreground">
-          {filteredRows.length} de {rows.length} unidades
+          {filteredRows.length} de {groupedRows.length} recuadros · {rows.length} unidades
         </div>
 
         {unitsQuery.isLoading ? (
@@ -653,10 +663,11 @@ function Dashboard() {
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredRows.map((r) => (
+            {filteredRows.map(({ row: r, includedUnits }) => (
               <PaymentRow
                 key={r.unit.id}
                 unit={r.unit}
+                includedUnits={includedUnits}
                 property={r.unit.properties}
                 payment={r.payment}
                 status={r.status}
@@ -767,6 +778,7 @@ function TrendChart({
 
 function PaymentRow({
   unit,
+  includedUnits,
   property,
   payment,
   status,
@@ -783,6 +795,7 @@ function PaymentRow({
   onServicesSaved,
 }: {
   unit: Unit;
+  includedUnits: Unit[];
   property: Property | null;
   payment: RentPayment | null;
   status: PaymentStatus;
@@ -807,6 +820,7 @@ function PaymentRow({
   const due = dueDateFor(year, month, unit.payment_day);
   const progress = total > 0 ? Math.min(100, (paid / total) * 100) : status === "paid" ? 100 : 0;
   const tenant = status === "inactive" ? "PENDIENTE" : unit.tenant_name || "Sin arrendatario";
+  const unitLabels = [unit.label, ...includedUnits.map((u) => u.label)].join(", ");
 
   return (
     <Card
@@ -816,11 +830,13 @@ function PaymentRow({
       )}
     >
       {/* Fila 1: Propiedad · Unidad + Estado */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-1.5">
           <span className={`h-2 w-2 shrink-0 rounded-full ${meta.dot}`} aria-label={meta.label} />
-          <span className="truncate text-sm font-medium leading-tight">{property?.name ?? "—"}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">· {unit.label}</span>
+          <div className="min-w-0">
+            <span className="text-sm font-medium leading-tight">{property?.name ?? "—"}</span>{" "}
+            <span className="break-words text-xs text-muted-foreground">· {unitLabels}</span>
+          </div>
         </div>
         <span className={`shrink-0 rounded-full border px-1.5 py-0 text-[10px] font-medium ${meta.badge}`}>
           {meta.label}
@@ -896,7 +912,7 @@ function PaymentRow({
           <SheetContent side="bottom" className="h-auto max-h-[85vh] rounded-t-2xl">
             <SheetHeader className="pb-2">
               <SheetTitle className="text-base">
-                {property?.name ?? "—"} · {unit.label}
+                {property?.name ?? "—"} · {unitLabels}
               </SheetTitle>
             </SheetHeader>
             <div className="py-2 text-sm">
