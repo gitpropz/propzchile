@@ -60,6 +60,35 @@ function unitTypeRank(t: string | null | undefined): number {
   return UNIT_TYPE_ORDER[t ?? "other"] ?? 2;
 }
 
+type DashGroup = ReturnType<typeof groupDashboardUnits>[number];
+
+/** Filtro de texto libre sobre propiedad, dirección, unidad, arrendatario y montos. */
+function textFilterRows(list: DashGroup[], q: string): DashGroup[] {
+  const query = q.trim().toLowerCase();
+  if (!query) return list;
+  const terms = query.split(/\s+/);
+  return list.filter(({ row: r, includedUnits }) => {
+    const p = r.unit.properties as Property | null;
+    const hay = [
+      p?.name,
+      p?.address,
+      p?.comuna,
+      r.unit.label,
+      ...includedUnits.map((u) => u.label),
+      r.unit.tenant_name,
+      (r.unit as any).tenant_rut,
+      STATUS_META[r.status].label,
+      String(r.unit.base_rent_amount ?? ""),
+      String(r.payment?.amount ?? ""),
+      String(r.payment?.amount_paid ?? ""),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return terms.every((t) => hay.includes(t));
+  });
+}
+
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [
     { title: "Dashboard de arriendos y servicios — Propz" },
@@ -253,32 +282,45 @@ function Dashboard() {
   }, [allUnits, paymentsByKey, year, month]);
 
   const [filter, setFilter] = useState("");
+  /** Caso seleccionado en "Requiere atención": filtra los recuadros de abajo. */
+  const [focus, setFocus] = useState<string | null>(null);
   const groupedRows = useMemo(() => groupDashboardUnits(rows), [rows]);
-  const filteredRows = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    if (!q) return groupedRows;
-    const terms = q.split(/\s+/);
-    return groupedRows.filter(({ row: r, includedUnits }) => {
-      const p = r.unit.properties as Property | null;
-      const hay = [
-        p?.name,
-        p?.address,
-        p?.comuna,
-        r.unit.label,
-        ...includedUnits.map((u) => u.label),
-        r.unit.tenant_name,
-        (r.unit as any).tenant_rut,
-        STATUS_META[r.status].label,
-        String(r.unit.base_rent_amount ?? ""),
-        String(r.payment?.amount ?? ""),
-        String(r.payment?.amount_paid ?? ""),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return terms.every((t) => hay.includes(t));
-    });
-  }, [groupedRows, filter]);
+
+  const focusedRows = useMemo(() => {
+    if (!focus) return null;
+    if (focus === "late") {
+      return groupedRows.filter(({ row: r }) => r.status === "late" || r.status === "warn");
+    }
+    if (focus === "svc-crit" || focus === "svc-unk") {
+      const want = focus === "svc-crit" ? "critical" : "unknown";
+      return groupedRows.filter(({ row: r }) => {
+        const pid = r.unit.property_id;
+        if (!pid) return false;
+        // El detalle de servicios vive en la unidad principal (depto/casa).
+        if (mainUnitIdByProperty.get(pid) !== r.unit.id) return false;
+        const m = servicesMonitor.byProperty.get(pid);
+        return !!m && m.services.some((s) => s.status === want);
+      });
+    }
+    if (focus === "vacant") {
+      return groupedRows.filter(({ row: r }) => !r.unit.rent_active);
+    }
+    if (focus === "expired" || focus === "expiring") {
+      const ids = new Set(
+        expiringContracts.filter((c) => c.lease.status === focus).map((c) => c.unit.id),
+      );
+      return groupedRows.filter(
+        ({ row: r, includedUnits }) =>
+          ids.has(r.unit.id) || includedUnits.some((u) => ids.has(u.id)),
+      );
+    }
+    return null;
+  }, [focus, groupedRows, mainUnitIdByProperty, servicesMonitor.byProperty, expiringContracts]);
+
+  const filteredRows = useMemo(
+    () => textFilterRows(focusedRows ?? groupedRows, filter),
+    [focusedRows, groupedRows, filter],
+  );
 
 
 
@@ -468,22 +510,20 @@ function Dashboard() {
       key: string;
       count: number;
       label: string;
-      to: string;
-      hash?: string;
       tone: "destructive" | "warning" | "muted";
     }[] = [];
     if (lateCount > 0)
-      items.push({ key: "late", count: lateCount, label: "arriendos atrasados", to: "/dashboard", hash: "unidades", tone: "destructive" });
+      items.push({ key: "late", count: lateCount, label: "arriendos atrasados", tone: "destructive" });
     if (servicesMonitor.counts.critical > 0)
-      items.push({ key: "svc-crit", count: servicesMonitor.counts.critical, label: "servicios críticos", to: "/services/update", tone: "destructive" });
+      items.push({ key: "svc-crit", count: servicesMonitor.counts.critical, label: "servicios críticos", tone: "destructive" });
     if (servicesMonitor.counts.unknown > 0)
-      items.push({ key: "svc-unk", count: servicesMonitor.counts.unknown, label: "servicios sin información", to: "/services/update", tone: "muted" });
+      items.push({ key: "svc-unk", count: servicesMonitor.counts.unknown, label: "servicios sin información", tone: "muted" });
     if (unrentedUnits.length > 0)
-      items.push({ key: "vacant", count: unrentedUnits.length, label: "propiedades vacantes", to: "/properties", tone: "warning" });
+      items.push({ key: "vacant", count: unrentedUnits.length, label: "propiedades vacantes", tone: "warning" });
     if (expiredCount > 0)
-      items.push({ key: "expired", count: expiredCount, label: "contratos vencidos", to: "/contracts", tone: "destructive" });
+      items.push({ key: "expired", count: expiredCount, label: "contratos vencidos", tone: "destructive" });
     if (expiringSoonCount > 0)
-      items.push({ key: "expiring", count: expiringSoonCount, label: "contratos por vencer", to: "/contracts", tone: "warning" });
+      items.push({ key: "expiring", count: expiringSoonCount, label: "contratos por vencer", tone: "warning" });
     return items;
   }, [lateCount, servicesMonitor.counts, unrentedUnits.length, expiredCount, expiringSoonCount]);
 
@@ -588,22 +628,31 @@ function Dashboard() {
         ) : (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {attentionItems.map((it) => (
-              <Link
+              <button
                 key={it.key}
-                to={it.to}
-                hash={it.hash}
+                type="button"
+                aria-pressed={focus === it.key}
+                title="Mostrar solo estos casos en el estado por unidad"
+                onClick={() => {
+                  const next = focus === it.key ? null : it.key;
+                  setFocus(next);
+                  if (next) {
+                    document.getElementById("unidades")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs hover:opacity-90",
                   it.tone === "destructive"
                     ? "border-destructive/40 bg-destructive/10"
                     : it.tone === "warning"
-                      ? "border-warning/40 bg-warning/10"
-                      : "border-border bg-muted/40",
+                          ? "border-warning/40 bg-warning/10"
+                          : "border-border bg-muted/40",
+                  focus === it.key && "ring-2 ring-foreground/25",
                 )}
               >
                 <span className="font-semibold tabular-nums text-foreground">{it.count}</span>
                 <span className="text-muted-foreground">{it.label}</span>
-              </Link>
+              </button>
             ))}
           </div>
         )}
@@ -647,6 +696,20 @@ function Dashboard() {
             </Button>
           ) : null}
         </div>
+        {focus ? (
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border bg-muted/30 px-2.5 py-1.5 text-xs">
+            <span>
+              Filtrando:{" "}
+              <span className="font-semibold text-foreground">
+                {attentionItems.find((i) => i.key === focus)?.label ?? focus}
+              </span>{" "}
+              · {filteredRows.length} {filteredRows.length === 1 ? "recuadro" : "recuadros"}
+            </span>
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setFocus(null)}>
+              Ver todas
+            </Button>
+          </div>
+        ) : null}
         <div className="mt-2 text-xs text-muted-foreground">
           {filteredRows.length} de {groupedRows.length} recuadros · {rows.length} unidades
         </div>
@@ -659,7 +722,9 @@ function Dashboard() {
           <EmptyState />
         ) : filteredRows.length === 0 ? (
           <div className="mt-6 rounded-xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
-            No hay unidades que coincidan con “{filter}”.
+            {filter
+              ? `No hay unidades que coincidan con “${filter}”.`
+              : "No hay casos que cumplan esta condición."}
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
