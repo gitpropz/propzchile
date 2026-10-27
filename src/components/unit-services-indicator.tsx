@@ -122,10 +122,13 @@ export function UnitServicesIndicator({
                         </div>
                         <div className="truncate text-[10px] text-muted-foreground">
                           {s.provider ?? "Sin compañía"}
-                          {s.expected_amount != null
-                            ? ` · esperado ${formatCLP(Number(s.expected_amount))}`
-                            : ""}
                         </div>
+                        {s.expected_amount != null ? (
+                          <div className="text-[10px] whitespace-nowrap text-muted-foreground">
+                            esperado {formatCLP(Number(s.expected_amount))}
+                          </div>
+                        ) : null}
+
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-right">
