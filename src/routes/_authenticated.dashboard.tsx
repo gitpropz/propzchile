@@ -60,7 +60,12 @@ function unitTypeRank(t: string | null | undefined): number {
   return UNIT_TYPE_ORDER[t ?? "other"] ?? 2;
 }
 
-type DashGroup = ReturnType<typeof groupDashboardUnits>[number];
+type DashRow = {
+  unit: Unit & { properties: Property | null };
+  payment: RentPayment | null;
+  status: PaymentStatus;
+};
+type DashGroup = { row: DashRow; includedUnits: Unit[] };
 
 /** Filtro de texto libre sobre propiedad, dirección, unidad, arrendatario y montos. */
 function textFilterRows(list: DashGroup[], q: string): DashGroup[] {
