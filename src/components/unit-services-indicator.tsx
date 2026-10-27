@@ -128,9 +128,8 @@ export function UnitServicesIndicator({
                             esperado {formatCLP(Number(s.expected_amount))}
                           </div>
                         ) : null}
-
-
                       </div>
+
                       <div className="flex items-center gap-2">
                         <div className="text-right">
                           <div className="text-xs font-semibold tabular-nums">
