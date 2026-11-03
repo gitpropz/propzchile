@@ -296,8 +296,9 @@ function Dashboard() {
     if (focus === "late") {
       return groupedRows.filter(({ row: r }) => r.status === "late" || r.status === "warn");
     }
-    if (focus === "svc-crit" || focus === "svc-unk") {
-      const want = focus === "svc-crit" ? "critical" : "unknown";
+    if (focus === "svc-crit" || focus === "svc-over" || focus === "svc-unk") {
+      const want =
+        focus === "svc-crit" ? "critical" : focus === "svc-over" ? "over" : "unknown";
       return groupedRows.filter(({ row: r }) => {
         const pid = r.unit.property_id;
         if (!pid) return false;
@@ -521,6 +522,8 @@ function Dashboard() {
       items.push({ key: "late", count: lateCount, label: "arriendos atrasados", tone: "destructive" });
     if (servicesMonitor.counts.critical > 0)
       items.push({ key: "svc-crit", count: servicesMonitor.counts.critical, label: "servicios críticos", tone: "destructive" });
+    if (servicesMonitor.counts.over > 0)
+      items.push({ key: "svc-over", count: servicesMonitor.counts.over, label: "servicios en revisar", tone: "warning" });
     if (servicesMonitor.counts.unknown > 0)
       items.push({ key: "svc-unk", count: servicesMonitor.counts.unknown, label: "servicios sin información", tone: "muted" });
     if (unrentedUnits.length > 0)
