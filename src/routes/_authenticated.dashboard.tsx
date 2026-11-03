@@ -32,6 +32,7 @@ import type { PropertyMonitoring } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 import { evaluateLease } from "@/lib/lease-expiry";
 import { groupDashboardUnits } from "@/lib/dashboard-unit-groups";
+import { dashboardFilterScope } from "@/lib/dashboard-filter-scope";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address" | "comuna">;
@@ -327,15 +328,22 @@ function Dashboard() {
     () => textFilterRows(focusedRows ?? groupedRows, filter),
     [focusedRows, groupedRows, filter],
   );
-
-
+  // Use original rows for accounting, never the collapsed presentation rows.
+  const financialRows = useMemo(
+    () => dashboardFilterScope(rows, filteredRows),
+    [rows, filteredRows],
+  );
+  const financialActiveUnits = useMemo(
+    () => financialRows.filter((r) => r.unit.rent_active).map((r) => r.unit),
+    [financialRows],
+  );
 
   const totals = useMemo(() => {
     let expected = 0;
     let confirmed = 0;
     let pending = 0;
     let overdue = 0;
-    for (const r of rows) {
+    for (const r of financialRows) {
       const total = expectedAmount(r.unit, r.payment, year, month);
       const paid = Number(r.payment?.amount_paid ?? 0);
       const remaining = Math.max(0, total - paid);
@@ -352,7 +360,7 @@ function Dashboard() {
       }
     }
     return { expected, confirmed, pending, overdue };
-  }, [rows, year, month]);
+  }, [financialRows, year, month]);
 
   // 6-month trend (expected & confirmed) using CLP-equivalent amounts.
   const trend = useMemo(() => {
@@ -361,7 +369,7 @@ function Dashboard() {
       const p = addMonths(year, month, -i);
       let expected = 0;
       let confirmed = 0;
-      for (const u of activeUnits) {
+      for (const u of financialActiveUnits) {
         const rec = paymentsByKey.get(`${u.id}:${p.year}:${p.month}`);
         const total = expectedAmount(u, rec ?? null, p.year, p.month);
         expected += total;
@@ -370,7 +378,7 @@ function Dashboard() {
       months.push({ ...p, expected, confirmed });
     }
     return months;
-  }, [activeUnits, paymentsByKey, year, month]);
+  }, [financialActiveUnits, paymentsByKey, year, month]);
 
   const collectedPct = totals.expected > 0
     ? Math.round((totals.confirmed / totals.expected) * 100)
