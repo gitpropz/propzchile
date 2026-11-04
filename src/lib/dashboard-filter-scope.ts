@@ -1,3 +1,12 @@
+import {
+  computeCoverage,
+  evaluateService,
+  type Coverage,
+  type MonitoredService,
+  type ServiceReading,
+  type ServiceStatus,
+} from "./monitored-services";
+
 /** Resolve visible cards back to original accounting rows, including grouped units. */
 export function dashboardFilterScope<T extends { unit: { id: string } }>(
   rows: T[],
@@ -9,15 +18,6 @@ export function dashboardFilterScope<T extends { unit: { id: string } }>(
   ]));
   return rows.filter((row) => ids.has(row.unit.id));
 }
-
-import {
-  computeCoverage,
-  evaluateService,
-  type Coverage,
-  type MonitoredService,
-  type ServiceReading,
-  type ServiceStatus,
-} from "./monitored-services";
 
 /**
  * Conteos y cobertura de servicios limitados a las propiedades visibles
