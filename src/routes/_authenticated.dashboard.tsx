@@ -747,11 +747,22 @@ function Dashboard() {
         </div>
 
         <div className="mt-2 flex items-center gap-2">
+          <Select value={ownerFilter || "all"} onValueChange={(v) => setOwnerFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="h-9 w-[140px] shrink-0 text-xs sm:w-[200px] sm:text-sm" aria-label="Filtrar por propietario">
+              <SelectValue placeholder="Propietario" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los propietarios</SelectItem>
+              {ownerOptions.map((name) => (
+                <SelectItem key={name} value={name}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filtrar por dirección, propiedad, unidad, arrendatario, monto…"
-            className="h-9"
+            className="h-9 min-w-0 flex-1"
             aria-label="Filtrar unidades"
           />
           {filter ? (
