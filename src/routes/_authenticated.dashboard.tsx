@@ -538,10 +538,10 @@ function Dashboard() {
 
   const isCurrent = year === currentPeriod().year && month === currentPeriod().month;
 
-  // Excepciones del mes: solo lo que requiere acción.
+  // Excepciones del mes: solo lo que requiere acción, dentro del alcance filtrado.
   const lateCount = useMemo(
-    () => rows.filter((r) => r.status === "late" || r.status === "warn").length,
-    [rows],
+    () => textScopedRows.filter((r) => r.status === "late" || r.status === "warn").length,
+    [textScopedRows],
   );
   const attentionItems = useMemo(() => {
     const items: {
@@ -550,22 +550,29 @@ function Dashboard() {
       label: string;
       tone: "destructive" | "warning" | "muted";
     }[] = [];
+    const vacantCount = textScopedRows.filter((r) => !r.unit.rent_active).length;
+    const scopedExpired = expiringContracts.filter(
+      (c) => textScopedUnitIds.has(c.unit.id) && c.lease.status === "expired",
+    ).length;
+    const scopedExpiring = expiringContracts.filter(
+      (c) => textScopedUnitIds.has(c.unit.id) && c.lease.status === "expiring",
+    ).length;
     if (lateCount > 0)
       items.push({ key: "late", count: lateCount, label: "arriendos atrasados", tone: "destructive" });
-    if (servicesMonitor.counts.critical > 0)
-      items.push({ key: "svc-crit", count: servicesMonitor.counts.critical, label: "servicios críticos", tone: "destructive" });
-    if (servicesMonitor.counts.over > 0)
-      items.push({ key: "svc-over", count: servicesMonitor.counts.over, label: "servicios en revisar", tone: "warning" });
-    if (servicesMonitor.counts.unknown > 0)
-      items.push({ key: "svc-unk", count: servicesMonitor.counts.unknown, label: "servicios sin información", tone: "muted" });
-    if (unrentedUnits.length > 0)
-      items.push({ key: "vacant", count: unrentedUnits.length, label: "propiedades vacantes", tone: "warning" });
-    if (expiredCount > 0)
-      items.push({ key: "expired", count: expiredCount, label: "contratos vencidos", tone: "destructive" });
-    if (expiringSoonCount > 0)
-      items.push({ key: "expiring", count: expiringSoonCount, label: "contratos por vencer", tone: "warning" });
+    if (scopedServiceStats.counts.critical > 0)
+      items.push({ key: "svc-crit", count: scopedServiceStats.counts.critical, label: "servicios críticos", tone: "destructive" });
+    if (scopedServiceStats.counts.over > 0)
+      items.push({ key: "svc-over", count: scopedServiceStats.counts.over, label: "servicios en revisar", tone: "warning" });
+    if (scopedServiceStats.counts.unknown > 0)
+      items.push({ key: "svc-unk", count: scopedServiceStats.counts.unknown, label: "servicios sin información", tone: "muted" });
+    if (vacantCount > 0)
+      items.push({ key: "vacant", count: vacantCount, label: "propiedades vacantes", tone: "warning" });
+    if (scopedExpired > 0)
+      items.push({ key: "expired", count: scopedExpired, label: "contratos vencidos", tone: "destructive" });
+    if (scopedExpiring > 0)
+      items.push({ key: "expiring", count: scopedExpiring, label: "contratos por vencer", tone: "warning" });
     return items;
-  }, [lateCount, servicesMonitor.counts, unrentedUnits.length, expiredCount, expiringSoonCount]);
+  }, [lateCount, scopedServiceStats.counts, textScopedRows, textScopedUnitIds, expiringContracts]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 md:px-6 md:py-6">
@@ -707,8 +714,8 @@ function Dashboard() {
       {/* Resumen ejecutivo de servicios */}
       <ServicesSummaryStrip
         period={servicesMonitor.period}
-        counts={servicesMonitor.counts}
-        coverage={servicesMonitor.coverage}
+        counts={scopedServiceStats.counts}
+        coverage={scopedServiceStats.coverage}
       />
 
       <BillsSection bills={billsQuery.data ?? []} unitsById={new Map((unitsQuery.data ?? []).map((u) => [u.id, u]))} />
