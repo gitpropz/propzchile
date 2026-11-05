@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
@@ -93,6 +94,12 @@ function textFilterRows(list: DashGroup[], q: string): DashGroup[] {
       .toLowerCase();
     return terms.every((t) => hay.includes(t));
   });
+}
+
+/** Filtro por propietario (nombre de la propiedad). Vacío = todos. */
+function ownerFilterRows(list: DashGroup[], owner: string): DashGroup[] {
+  if (!owner) return list;
+  return list.filter(({ row: r }) => (r.unit.properties as Property | null)?.name === owner);
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
