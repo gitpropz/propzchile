@@ -973,14 +973,14 @@ function PaymentRow({
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-start gap-1.5">
           <span className={`h-2 w-2 shrink-0 rounded-full ${meta.dot}`} aria-label={meta.label} />
-          <div className="min-w-0">
-            <span className="text-sm font-medium leading-tight">{property?.name ?? "—"}</span>{" "}
-            <span className="break-words text-xs text-muted-foreground">· {unitLabels}</span>
-          </div>
+          <span className="truncate text-sm font-medium leading-tight">{property?.name ?? "—"}</span>
         </div>
         <span className={`shrink-0 rounded-full border px-1.5 py-0 text-[10px] font-medium ${meta.badge}`}>
           {meta.label}
         </span>
+      </div>
+      <div className="truncate pl-3.5 text-xs leading-tight text-muted-foreground" title={unitLabels}>
+        {unitLabels}
       </div>
 
       {/* Fila 2: Arrendatario + Abonado */}
