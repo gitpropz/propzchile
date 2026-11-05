@@ -255,8 +255,6 @@ function Dashboard() {
         .filter((c) => c.lease.status === "expiring" || c.lease.status === "expired"),
     [activeUnits],
   );
-  const expiredCount = expiringContracts.filter((c) => c.lease.status === "expired").length;
-  const expiringSoonCount = expiringContracts.length - expiredCount;
 
   const paymentsByKey = useMemo(() => {
     const map = new Map<string, RentPayment>();
