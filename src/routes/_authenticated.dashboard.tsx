@@ -32,7 +32,7 @@ import type { PropertyMonitoring } from "@/lib/monitored-services";
 import type { Database } from "@/integrations/supabase/types";
 import { evaluateLease } from "@/lib/lease-expiry";
 import { groupDashboardUnits } from "@/lib/dashboard-unit-groups";
-import { dashboardFilterScope } from "@/lib/dashboard-filter-scope";
+import { dashboardFilterScope, dashboardServicesScope } from "@/lib/dashboard-filter-scope";
 
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 type Property = Pick<Database["public"]["Tables"]["properties"]["Row"], "id" | "name" | "address" | "comuna">;
@@ -336,6 +336,30 @@ function Dashboard() {
   const financialActiveUnits = useMemo(
     () => financialRows.filter((r) => r.unit.rent_active).map((r) => r.unit),
     [financialRows],
+  );
+
+  // Alcance del filtro de texto (sin el foco de "Requiere atención"): las alertas
+  // y el resumen de servicios reflejan solo los casos filtrados; sin filtro, el total.
+  const textScopedRows = useMemo(
+    () => dashboardFilterScope(rows, textFilterRows(groupedRows, filter)),
+    [rows, groupedRows, filter],
+  );
+  const textScopedUnitIds = useMemo(
+    () => new Set(textScopedRows.map((r) => r.unit.id)),
+    [textScopedRows],
+  );
+  const textScopedPropertyIds = useMemo(
+    () =>
+      new Set(
+        textScopedRows
+          .map((r) => r.unit.property_id)
+          .filter((v): v is string => typeof v === "string" && v.length > 0),
+      ),
+    [textScopedRows],
+  );
+  const scopedServiceStats = useMemo(
+    () => dashboardServicesScope(servicesMonitor.services, servicesMonitor.index, textScopedPropertyIds),
+    [servicesMonitor.services, servicesMonitor.index, textScopedPropertyIds],
   );
 
   const totals = useMemo(() => {

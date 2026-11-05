@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { deepStrictEqual, strictEqual } from "node:assert";
-import { dashboardFilterScope } from "./dashboard-filter-scope";
+import { dashboardFilterScope, dashboardServicesScope } from "./dashboard-filter-scope";
 
 const rows = [
   { unit: { id: "home" }, expected: 500000, confirmed: 400000, previousConfirmed: 300000 },
@@ -40,5 +40,46 @@ describe("Dashboard filtered financial scope", () => {
     strictEqual(sum(scope, "expected"), 0);
     strictEqual(sum(scope, "confirmed"), 0);
     strictEqual(sum(scope, "previousConfirmed"), 0);
+  });
+});
+
+const svc = (id: string, propertyId: string, expected = 20000) =>
+  ({ id, property_id: propertyId, active: true, expected_amount: expected }) as any;
+const reading = (serviceId: string, amountDue: number, source = "servipag") =>
+  ({ service_id: serviceId, amount_due: amountDue, source, period: "2026-11" }) as any;
+
+describe("Dashboard filtered services scope", () => {
+  const services = [
+    svc("s1", "prop-a"), // lectura 0 → normal
+    svc("s2", "prop-a"), // deuda 3 meses → critical
+    svc("s3", "prop-b"), // sin lectura → unknown
+  ];
+  const index = new Map<string, any>([
+    ["s1", reading("s1", 0)],
+    ["s2", reading("s2", 60000)],
+  ]);
+
+  test("filtering to one property counts only its services and coverage", () => {
+    const { counts, coverage } = dashboardServicesScope(services, index, new Set(["prop-a"]));
+    deepStrictEqual(counts, { normal: 1, over: 0, critical: 1, unknown: 0 });
+    strictEqual(coverage.expected, 2);
+    strictEqual(coverage.pending, 0);
+    strictEqual(coverage.pct, 100);
+  });
+  test("all properties in scope reproduces the global totals", () => {
+    const { counts, coverage } = dashboardServicesScope(
+      services,
+      index,
+      new Set(["prop-a", "prop-b"]),
+    );
+    deepStrictEqual(counts, { normal: 1, over: 0, critical: 1, unknown: 1 });
+    strictEqual(coverage.expected, 3);
+    strictEqual(coverage.pending, 1);
+  });
+  test("no property in scope yields zeros, not global totals", () => {
+    const { counts, coverage } = dashboardServicesScope(services, index, new Set());
+    deepStrictEqual(counts, { normal: 0, over: 0, critical: 0, unknown: 0 });
+    strictEqual(coverage.expected, 0);
+    strictEqual(coverage.pct, 0);
   });
 });
