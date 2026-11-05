@@ -342,8 +342,8 @@ function Dashboard() {
   }, [focus, groupedRows, mainUnitIdByProperty, servicesMonitor.byProperty, expiringContracts]);
 
   const filteredRows = useMemo(
-    () => textFilterRows(focusedRows ?? groupedRows, filter),
-    [focusedRows, groupedRows, filter],
+    () => textFilterRows(ownerFilterRows(focusedRows ?? groupedRows, ownerFilter), filter),
+    [focusedRows, groupedRows, ownerFilter, filter],
   );
   // Use original rows for accounting, never the collapsed presentation rows.
   const financialRows = useMemo(
@@ -358,8 +358,8 @@ function Dashboard() {
   // Alcance del filtro de texto (sin el foco de "Requiere atención"): las alertas
   // y el resumen de servicios reflejan solo los casos filtrados; sin filtro, el total.
   const textScopedRows = useMemo(
-    () => dashboardFilterScope(rows, textFilterRows(groupedRows, filter)),
-    [rows, groupedRows, filter],
+    () => dashboardFilterScope(rows, ownerFilterRows(textFilterRows(groupedRows, filter), ownerFilter)),
+    [rows, groupedRows, filter, ownerFilter],
   );
   const textScopedUnitIds = useMemo(
     () => new Set(textScopedRows.map((r) => r.unit.id)),
