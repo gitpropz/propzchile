@@ -293,9 +293,21 @@ function Dashboard() {
   }, [allUnits, paymentsByKey, year, month]);
 
   const [filter, setFilter] = useState("");
+  /** Propietario seleccionado en el desplegable; vacío = todos. */
+  const [ownerFilter, setOwnerFilter] = useState("");
   /** Caso seleccionado en "Requiere atención": filtra los recuadros de abajo. */
   const [focus, setFocus] = useState<string | null>(null);
   const groupedRows = useMemo(() => groupDashboardUnits(rows), [rows]);
+
+  /** Propietarios disponibles, orden alfabético. */
+  const ownerOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const { row: r } of groupedRows) {
+      const n = (r.unit.properties as Property | null)?.name;
+      if (n) names.add(n);
+    }
+    return [...names].sort(new Intl.Collator("es", { sensitivity: "base" }).compare);
+  }, [groupedRows]);
 
   const focusedRows = useMemo(() => {
     if (!focus) return null;
