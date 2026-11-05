@@ -129,8 +129,8 @@ function NewProperty() {
           <h2 className="font-semibold">Datos de la propiedad</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="name">Nombre corto</Label>
-              <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Depto 1204 Providencia" />
+              <Label htmlFor="name">Propietario</Label>
+              <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Juan Pérez" />
             </div>
             <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="addr">Dirección</Label>
@@ -193,8 +193,8 @@ function NewProperty() {
                     </Select>
                   </div>
                   <div className="md:col-span-2 space-y-1.5">
-                    <Label>N° o identificador</Label>
-                    <Input value={u.identifier} onChange={(e) => updateUnit(i, { identifier: e.target.value })} placeholder="Ej: 34" />
+                    <Label>Rol</Label>
+                    <Input value={u.identifier} onChange={(e) => updateUnit(i, { identifier: e.target.value })} placeholder="Ej: 1234-5" />
                   </div>
                   <div className="md:col-span-3 space-y-1.5">
                     <Label>Arriendo base (opcional)</Label>

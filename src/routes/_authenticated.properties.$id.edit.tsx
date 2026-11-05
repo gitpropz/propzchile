@@ -100,7 +100,7 @@ function EditProperty() {
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="name">Nombre corto</Label>
+              <Label htmlFor="name">Propietario</Label>
               <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="md:col-span-2 space-y-1.5">

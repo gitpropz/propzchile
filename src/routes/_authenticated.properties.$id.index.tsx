@@ -520,7 +520,7 @@ function UnitsTab({
                       </Select>
                     </div>
                     <div className="md:col-span-2 space-y-1.5">
-                      <Label>N°/identificador</Label>
+                      <Label>Rol</Label>
                       <Input value={editDraft.identifier} onChange={(e) => setEditDraft({ ...editDraft, identifier: e.target.value })} />
                     </div>
                     <div className="md:col-span-3 space-y-1.5">
@@ -756,7 +756,7 @@ function UnitsTab({
               </Select>
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <Label>N°/identificador</Label>
+              <Label>Rol</Label>
               <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
             </div>
             <div className="md:col-span-3 space-y-1.5">

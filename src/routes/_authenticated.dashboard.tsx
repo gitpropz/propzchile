@@ -564,7 +564,7 @@ function Dashboard() {
     if (scopedServiceStats.counts.unknown > 0)
       items.push({ key: "svc-unk", count: scopedServiceStats.counts.unknown, label: "servicios sin información", tone: "muted" });
     if (vacantCount > 0)
-      items.push({ key: "vacant", count: vacantCount, label: "propiedades vacantes", tone: "warning" });
+      items.push({ key: "vacant", count: vacantCount, label: vacantCount === 1 ? "unidad vacante" : "unidades vacantes", tone: "warning" });
     if (scopedExpired > 0)
       items.push({ key: "expired", count: scopedExpired, label: "contratos vencidos", tone: "destructive" });
     if (scopedExpiring > 0)
