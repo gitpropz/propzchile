@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
@@ -93,6 +94,12 @@ function textFilterRows(list: DashGroup[], q: string): DashGroup[] {
       .toLowerCase();
     return terms.every((t) => hay.includes(t));
   });
+}
+
+/** Filtro por propietario (nombre de la propiedad). Vacío = todos. */
+function ownerFilterRows(list: DashGroup[], owner: string): DashGroup[] {
+  if (!owner) return list;
+  return list.filter(({ row: r }) => (r.unit.properties as Property | null)?.name === owner);
 }
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -286,9 +293,21 @@ function Dashboard() {
   }, [allUnits, paymentsByKey, year, month]);
 
   const [filter, setFilter] = useState("");
+  /** Propietario seleccionado en el desplegable; vacío = todos. */
+  const [ownerFilter, setOwnerFilter] = useState("");
   /** Caso seleccionado en "Requiere atención": filtra los recuadros de abajo. */
   const [focus, setFocus] = useState<string | null>(null);
   const groupedRows = useMemo(() => groupDashboardUnits(rows), [rows]);
+
+  /** Propietarios disponibles, orden alfabético. */
+  const ownerOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const { row: r } of groupedRows) {
+      const n = (r.unit.properties as Property | null)?.name;
+      if (n) names.add(n);
+    }
+    return [...names].sort(new Intl.Collator("es", { sensitivity: "base" }).compare);
+  }, [groupedRows]);
 
   const focusedRows = useMemo(() => {
     if (!focus) return null;
@@ -323,8 +342,8 @@ function Dashboard() {
   }, [focus, groupedRows, mainUnitIdByProperty, servicesMonitor.byProperty, expiringContracts]);
 
   const filteredRows = useMemo(
-    () => textFilterRows(focusedRows ?? groupedRows, filter),
-    [focusedRows, groupedRows, filter],
+    () => textFilterRows(ownerFilterRows(focusedRows ?? groupedRows, ownerFilter), filter),
+    [focusedRows, groupedRows, ownerFilter, filter],
   );
   // Use original rows for accounting, never the collapsed presentation rows.
   const financialRows = useMemo(
@@ -339,8 +358,8 @@ function Dashboard() {
   // Alcance del filtro de texto (sin el foco de "Requiere atención"): las alertas
   // y el resumen de servicios reflejan solo los casos filtrados; sin filtro, el total.
   const textScopedRows = useMemo(
-    () => dashboardFilterScope(rows, textFilterRows(groupedRows, filter)),
-    [rows, groupedRows, filter],
+    () => dashboardFilterScope(rows, ownerFilterRows(textFilterRows(groupedRows, filter), ownerFilter)),
+    [rows, groupedRows, filter, ownerFilter],
   );
   const textScopedUnitIds = useMemo(
     () => new Set(textScopedRows.map((r) => r.unit.id)),
@@ -728,11 +747,22 @@ function Dashboard() {
         </div>
 
         <div className="mt-2 flex items-center gap-2">
+          <Select value={ownerFilter || "all"} onValueChange={(v) => setOwnerFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="h-9 w-[140px] shrink-0 text-xs sm:w-[200px] sm:text-sm" aria-label="Filtrar por propietario">
+              <SelectValue placeholder="Propietario" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los propietarios</SelectItem>
+              {ownerOptions.map((name) => (
+                <SelectItem key={name} value={name}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder="Filtrar por dirección, propiedad, unidad, arrendatario, monto…"
-            className="h-9"
+            className="h-9 min-w-0 flex-1"
             aria-label="Filtrar unidades"
           />
           {filter ? (
