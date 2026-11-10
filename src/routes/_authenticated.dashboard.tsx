@@ -384,6 +384,10 @@ function Dashboard() {
     let confirmed = 0;
     let pending = 0;
     let overdue = 0;
+    let expectedCount = 0;
+    let confirmedCount = 0;
+    let pendingCount = 0;
+    let overdueCount = 0;
     for (const r of financialRows) {
       const total = expectedAmount(r.unit, r.payment, year, month);
       const paid = Number(r.payment?.amount_paid ?? 0);
@@ -391,16 +395,22 @@ function Dashboard() {
       expected += total;
       // El confirmado suma TODO lo abonado, incluso si excede el monto esperado.
       confirmed += paid;
+      // Los conteos consideran solo unidades con monto esperado > 0, para no
+      // duplicar arrendatarios con unidades incluidas de contrato cero.
+      if (total <= 0) continue;
+      expectedCount += 1;
       if (r.status === "paid") {
-        // fully paid
+        confirmedCount += 1;
       } else if (r.status === "warn" || r.status === "late") {
         overdue += remaining;
+        if (remaining > 0) overdueCount += 1;
       } else {
         // partial (unpaid balance) or upcoming
         pending += remaining;
+        if (remaining > 0) pendingCount += 1;
       }
     }
-    return { expected, confirmed, pending, overdue };
+    return { expected, confirmed, pending, overdue, expectedCount, confirmedCount, pendingCount, overdueCount };
   }, [financialRows, year, month]);
 
   // 6-month trend (expected & confirmed) using CLP-equivalent amounts.
