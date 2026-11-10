@@ -983,9 +983,13 @@ function PaymentRow({
         {unitLabels}
       </div>
 
-      {/* Fila 2: Arrendatario + Abonado */}
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate text-xs text-muted-foreground">{tenant}</span>
+      {/* Fila 2: Arrendatario (línea completa, sin cortar) */}
+      <div className="pl-3.5 text-xs leading-tight text-muted-foreground" title={tenant}>
+        {tenant}
+      </div>
+
+      {/* Fila 3: Abonado */}
+      <div className="flex items-baseline justify-end gap-2">
         <span className="shrink-0 tabular-nums text-sm font-semibold text-success">
           {formatMoney(paid, currency)}
           <span className="ml-1 text-[10px] font-normal text-muted-foreground">/ {formatMoney(total, currency)}</span>
