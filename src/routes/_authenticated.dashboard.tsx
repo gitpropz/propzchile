@@ -384,6 +384,10 @@ function Dashboard() {
     let confirmed = 0;
     let pending = 0;
     let overdue = 0;
+    let expectedCount = 0;
+    let confirmedCount = 0;
+    let pendingCount = 0;
+    let overdueCount = 0;
     for (const r of financialRows) {
       const total = expectedAmount(r.unit, r.payment, year, month);
       const paid = Number(r.payment?.amount_paid ?? 0);
@@ -391,16 +395,22 @@ function Dashboard() {
       expected += total;
       // El confirmado suma TODO lo abonado, incluso si excede el monto esperado.
       confirmed += paid;
+      // Los conteos consideran solo unidades con monto esperado > 0, para no
+      // duplicar arrendatarios con unidades incluidas de contrato cero.
+      if (total <= 0) continue;
+      expectedCount += 1;
       if (r.status === "paid") {
-        // fully paid
+        confirmedCount += 1;
       } else if (r.status === "warn" || r.status === "late") {
         overdue += remaining;
+        if (remaining > 0) overdueCount += 1;
       } else {
         // partial (unpaid balance) or upcoming
         pending += remaining;
+        if (remaining > 0) pendingCount += 1;
       }
     }
-    return { expected, confirmed, pending, overdue };
+    return { expected, confirmed, pending, overdue, expectedCount, confirmedCount, pendingCount, overdueCount };
   }, [financialRows, year, month]);
 
   // 6-month trend (expected & confirmed) using CLP-equivalent amounts.
@@ -673,13 +683,14 @@ function Dashboard() {
         </div>
 
         <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border pt-2 sm:grid-cols-4">
-          <FlowItem label="Esperado" value={formatCLP(totals.expected)} />
-          <FlowItem label="Confirmado" value={formatCLP(totals.confirmed)} tone="success" />
-          <FlowItem label="Pendiente" value={formatCLP(totals.pending)} />
+          <FlowItem label="Esperado" value={formatCLP(totals.expected)} count={totals.expectedCount} />
+          <FlowItem label="Confirmado" value={formatCLP(totals.confirmed)} tone="success" count={totals.confirmedCount} />
+          <FlowItem label="Pendiente" value={formatCLP(totals.pending)} count={totals.pendingCount} />
           <FlowItem
             label="Atrasado"
             value={formatCLP(totals.overdue)}
             tone={totals.overdue > 0 ? "destructive" : undefined}
+            count={totals.overdueCount}
           />
         </div>
       </section>
@@ -839,10 +850,12 @@ function FlowItem({
   label,
   value,
   tone,
+  count,
 }: {
   label: string;
   value: string;
   tone?: "success" | "destructive";
+  count?: number;
 }) {
   return (
     <div>
@@ -858,6 +871,11 @@ function FlowItem({
         }
       >
         {value}
+        {count != null ? (
+          <span className="ml-1 text-[11px] font-normal tabular-nums text-muted-foreground">
+            ({count})
+          </span>
+        ) : null}
       </div>
     </div>
   );
