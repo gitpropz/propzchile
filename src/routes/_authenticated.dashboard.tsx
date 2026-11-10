@@ -683,13 +683,14 @@ function Dashboard() {
         </div>
 
         <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border pt-2 sm:grid-cols-4">
-          <FlowItem label="Esperado" value={formatCLP(totals.expected)} />
-          <FlowItem label="Confirmado" value={formatCLP(totals.confirmed)} tone="success" />
-          <FlowItem label="Pendiente" value={formatCLP(totals.pending)} />
+          <FlowItem label="Esperado" value={formatCLP(totals.expected)} count={totals.expectedCount} />
+          <FlowItem label="Confirmado" value={formatCLP(totals.confirmed)} tone="success" count={totals.confirmedCount} />
+          <FlowItem label="Pendiente" value={formatCLP(totals.pending)} count={totals.pendingCount} />
           <FlowItem
             label="Atrasado"
             value={formatCLP(totals.overdue)}
             tone={totals.overdue > 0 ? "destructive" : undefined}
+            count={totals.overdueCount}
           />
         </div>
       </section>
