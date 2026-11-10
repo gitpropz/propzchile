@@ -850,10 +850,12 @@ function FlowItem({
   label,
   value,
   tone,
+  count,
 }: {
   label: string;
   value: string;
   tone?: "success" | "destructive";
+  count?: number;
 }) {
   return (
     <div>
@@ -869,6 +871,11 @@ function FlowItem({
         }
       >
         {value}
+        {count != null ? (
+          <span className="ml-1 text-[11px] font-normal tabular-nums text-muted-foreground">
+            ({count})
+          </span>
+        ) : null}
       </div>
     </div>
   );
