@@ -15,6 +15,7 @@ import {
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
+import { useAccount } from "@/hooks/use-account";
 import { UNIT_TYPE_OPTIONS, CURRENCY_OPTIONS, type UnitType, type Currency } from "@/lib/property-types";
 
 export const Route = createFileRoute("/_authenticated/properties/new")({
@@ -37,6 +38,8 @@ function emptyUnit(): UnitDraft {
 function NewProperty() {
   const navigate = useNavigate();
   const org = useCurrentOrg();
+  const account = useAccount();
+  const independent = account.data?.account_type === "independent_owner";
 
   const [name, setName] = useDraftState("new-property:name", "");
   const [address, setAddress] = useDraftState("new-property:address", "");
@@ -54,7 +57,8 @@ function NewProperty() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!org.data?.organization_id) {
+    const organizationId = org.data?.organization_id;
+    if (!organizationId) {
       toast.error("No encontramos tu organización");
       return;
     }
@@ -70,8 +74,8 @@ function NewProperty() {
     const { data: property, error } = await supabase
       .from("properties")
       .insert({
-        organization_id: org.data.organization_id,
-        name,
+        organization_id: organizationId,
+        name: independent ? (account.data?.full_name || org.data?.organizations?.name || "Mi cartera") : name,
         address,
         comuna: comuna || null,
         region: region || null,
@@ -91,7 +95,7 @@ function NewProperty() {
     const unitsToInsert = validUnits
       .map((u) => ({
         property_id: property.id,
-        organization_id: org.data!.organization_id,
+        organization_id: organizationId,
         label: u.label.trim(),
         unit_type: u.unit_type,
         identifier: u.identifier || null,
@@ -128,10 +132,10 @@ function NewProperty() {
         <section className="rounded-xl border border-border bg-card p-5">
           <h2 className="font-semibold">Datos de la propiedad</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2 space-y-1.5">
+            {!independent && <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="name">Propietario</Label>
               <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Juan Pérez" />
-            </div>
+            </div>}
             <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="addr">Dirección</Label>
               <Input id="addr" required value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Ej: Av. Providencia 1234, Depto 1204" />
@@ -237,7 +241,7 @@ function NewProperty() {
 
         <div className="flex justify-end gap-3">
           <Link to="/properties"><Button type="button" variant="ghost">Cancelar</Button></Link>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving || account.isPending}>
             {saving ? "Guardando…" : "Crear propiedad"}
           </Button>
         </div>
@@ -254,10 +258,10 @@ function NewProperty() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
-              onClick={() =>
+              onClick={() => createdId &&
                 navigate({
                   to: "/properties/$id",
-                  params: { id: createdId! },
+                  params: { id: createdId },
                   search: { tab: "units" },
                 })
               }
@@ -265,10 +269,10 @@ function NewProperty() {
               Más tarde
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
+              onClick={() => createdId &&
                 navigate({
                   to: "/properties/$id",
-                  params: { id: createdId! },
+                  params: { id: createdId },
                   search: { tab: "bills" },
                 })
               }

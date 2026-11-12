@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAccountSetupRouteImport } from './routes/_authenticated.account-setup'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated.properties'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
@@ -54,6 +55,11 @@ const AuthenticatedAccountSetupRoute =
     path: '/account-setup',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/account-setup': typeof AuthenticatedAccountSetupRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/account-setup': typeof AuthenticatedAccountSetupRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/properties/new': typeof AuthenticatedPropertiesNewRoute
   '/rent/import': typeof AuthenticatedRentImportRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/account-setup': typeof AuthenticatedAccountSetupRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/account-setup'
+    | '/admin'
     | '/dashboard'
     | '/properties'
     | '/settings'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/account-setup'
+    | '/admin'
     | '/dashboard'
     | '/properties/new'
     | '/rent/import'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_authenticated/account-setup'
+    | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/properties'
     | '/_authenticated/settings'
@@ -299,6 +311,13 @@ declare module '@tanstack/react-router' {
       path: '/account-setup'
       fullPath: '/account-setup'
       preLoaderRoute: typeof AuthenticatedAccountSetupRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard': {
@@ -444,6 +463,7 @@ const AuthenticatedSettingsRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAccountSetupRoute: typeof AuthenticatedAccountSetupRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
@@ -454,6 +474,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAccountSetupRoute: AuthenticatedAccountSetupRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,

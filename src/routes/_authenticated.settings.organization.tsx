@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
+import { useAccount } from "@/hooks/use-account";
+import { ACCOUNT_LABELS } from "@/lib/account-types";
 import { CURRENCY_OPTIONS, type Currency } from "@/lib/property-types";
 
 export const Route = createFileRoute("/_authenticated/settings/organization")({
@@ -16,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/settings/organization")({
 
 function OrgSettings() {
   const org = useCurrentOrg();
+  const account = useAccount();
   const [name, setName] = useState("");
   const [country, setCountry] = useState("CL");
   const [currency, setCurrency] = useState<Currency>("CLP");
@@ -48,6 +51,7 @@ function OrgSettings() {
 
   return (
     <form onSubmit={save} className="max-w-xl space-y-5 rounded-xl border border-border bg-card p-5">
+      {account.data?.account_type && <div className="text-sm"><span className="text-muted-foreground">Perfil: </span>{ACCOUNT_LABELS[account.data.account_type]}</div>}
       <div className="space-y-1.5">
         <Label htmlFor="orgname">Nombre de la organización</Label>
         <Input id="orgname" value={name} onChange={(e) => setName(e.target.value)} required />
