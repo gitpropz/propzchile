@@ -11,6 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { ClientTypePicker } from "@/components/client-type-picker";
+import { accountDestination, type ClientType } from "@/lib/account-types";
+import { getAccountContext } from "@/lib/account-context";
+import { ensureAccountSetup } from "@/lib/account-bootstrap";
 
 
 export const Route = createFileRoute("/auth")({
@@ -18,6 +22,10 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Iniciar sesión — Propz" },
       { name: "description", content: "Accede a tu panel de administración de propiedades." },
+      { property: "og:title", content: "Iniciar sesión — Propz 5.0" },
+      { property: "og:description", content: "Accede a tu cartera o administración de Propz." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -26,15 +34,25 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"signin" | "signup">("signin");
+  async function onSuccess() {
+    try {
+      await ensureAccountSetup();
+      const account = await getAccountContext();
+      await navigate({ to: accountDestination(account.account_type), replace: true });
+    } catch { toast.error("No pudimos cargar tu cuenta. Inténtalo nuevamente."); }
+  }
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash === "#signup") {
       setTab("signup");
     }
     // Redirect if already signed in
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard", replace: true });
-    });
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        const account = await getAccountContext();
+        navigate({ to: accountDestination(account.account_type), replace: true });
+      }
+    }).catch(() => {});
   }, [navigate]);
 
   return (
@@ -61,10 +79,10 @@ function AuthPage() {
             </TabsList>
 
             <TabsContent value="signin" className="pt-6">
-              <SignInForm onSuccess={() => navigate({ to: "/dashboard", replace: true })} />
+              <SignInForm onSuccess={onSuccess} />
             </TabsContent>
             <TabsContent value="signup" className="pt-6">
-              <SignUpForm onSuccess={() => navigate({ to: "/dashboard", replace: true })} />
+              <SignUpForm onSuccess={onSuccess} />
             </TabsContent>
           </Tabs>
 
@@ -74,7 +92,7 @@ function AuthPage() {
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <GoogleButton />
+          <GoogleButton onSuccess={onSuccess} />
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
@@ -169,6 +187,8 @@ function SignInForm({ onSuccess }: { onSuccess: () => void }) {
 
 
 function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
+  const [accountType, setAccountType] = useState<ClientType>("independent_owner");
+  const [confirmationSent, setConfirmationSent] = useState(false);
   const [fullName, setFullName] = useState("");
   const [orgName, setOrgName] = useState("");
   const [email, setEmail] = useState("");
@@ -184,12 +204,13 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: window.location.origin,
         data: {
+          account_type: accountType,
           full_name: fullName,
           phone: cleanPhone,
           organization_name: orgName || "Mi patrimonio",
@@ -201,12 +222,14 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       toast.error("No pudimos crear tu cuenta", { description: error.message });
       return;
     }
-    toast.success("Bienvenido a Propz");
-    onSuccess();
+    if (data.session) onSuccess();
+    else setConfirmationSent(true);
   }
 
+  if (confirmationSent) return <p className="text-sm text-foreground" role="status">Revisa tu correo para confirmar tu cuenta y luego inicia sesión en Propz.</p>;
   return (
     <form onSubmit={handle} className="space-y-4">
+      <ClientTypePicker value={accountType} onChange={setAccountType} />
       <div className="space-y-1.5">
         <Label htmlFor="su-name">Tu nombre</Label>
         <Input id="su-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ej: María Pérez" />
@@ -235,7 +258,7 @@ function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function GoogleButton() {
+function GoogleButton({ onSuccess }: { onSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
   async function handle() {
     setLoading(true);
@@ -248,7 +271,8 @@ function GoogleButton() {
       return;
     }
     if (result.redirected) return;
-    window.location.href = "/dashboard";
+    setLoading(false);
+    onSuccess();
   }
   return (
     <Button type="button" variant="outline" className="w-full" onClick={handle} disabled={loading}>
