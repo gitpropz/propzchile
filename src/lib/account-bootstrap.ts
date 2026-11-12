@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAccountContext } from "@/lib/account-context";
+import { isClientType } from "@/lib/account-types";
 
 /**
  * Ensures the signed-in user has a profile row and belongs to an organization.
@@ -40,16 +42,25 @@ export async function ensureAccountSetup(): Promise<void> {
       .eq("id", user.id);
   }
 
+  const account = await getAccountContext();
+  if (account.account_type === "general_admin") return;
+  if (!account.account_type && isClientType(meta.account_type)) {
+    const { error } = await supabase.rpc("complete_client_setup", { _account_type: meta.account_type });
+    if (error) throw error;
+  }
+
   // 2. Organization membership
-  const { data: membership } = await supabase
+  const { data: membership, error: membershipError } = await supabase
     .from("organization_members")
     .select("id")
     .eq("user_id", user.id)
     .limit(1)
     .maybeSingle();
 
+  if (membershipError) throw membershipError;
   if (membership) return;
 
   const orgName = (meta.organization_name as string) || "Mi patrimonio";
-  await supabase.rpc("create_org_for_current_user", { _name: orgName });
+  const { error } = await supabase.rpc("create_org_for_current_user", { _name: orgName });
+  if (error) throw error;
 }

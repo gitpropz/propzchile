@@ -12,3 +12,6 @@
 - Service import labels resolve explicit service units first, then show the property's non-ancillary units as context without changing stored associations; this distinguishes similarly named properties while preserving matching logic.
 - Dashboard unit grouping lives in a pure presentation helper; retain original rows for financial totals and mutations so collapsing included units never changes accounting.
 - Dashboard financial summaries resolve the final visible groups to original rows through a pure scope helper, and reuse that unit scope across comparison months to keep filters consistent without changing accounting formulas.
+- Customer account types live in a protected client_accounts table, separate from legacy membership permissions; global administration derives exclusively from user_roles.superadmin to prevent public privilege escalation.
+- Account provisioning is transactional and idempotent in database functions; reuse existing memberships and organizations to avoid duplication on signup or concurrent login.
+- Global support selects an organization through the shared current-organization query; authorization remains in RLS and privileged functions, never in the picker.

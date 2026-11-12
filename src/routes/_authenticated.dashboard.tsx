@@ -11,6 +11,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
+import { useAccount } from "@/hooks/use-account";
 import { formatCLP, formatCLPCompact, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { addManualAllocation, clearAllocations, ensureRentPayment } from "@/lib/rent-allocations";
@@ -157,6 +158,7 @@ function expectedAmount(
 
 function Dashboard() {
   const org = useCurrentOrg();
+  const account = useAccount();
   const orgId = org.data?.organization_id;
   const qc = useQueryClient();
 
@@ -758,7 +760,7 @@ function Dashboard() {
         </div>
 
         <div className="mt-2 flex items-center gap-2">
-          <Select value={ownerFilter || "all"} onValueChange={(v) => setOwnerFilter(v === "all" ? "" : v)}>
+          {account.data?.account_type !== "independent_owner" && <Select value={ownerFilter || "all"} onValueChange={(v) => setOwnerFilter(v === "all" ? "" : v)}>
             <SelectTrigger className="h-9 w-[140px] shrink-0 text-xs sm:w-[200px] sm:text-sm" aria-label="Filtrar por propietario">
               <SelectValue placeholder="Propietario" />
             </SelectTrigger>
@@ -768,7 +770,7 @@ function Dashboard() {
                 <SelectItem key={name} value={name}>{name}</SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select>}
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}

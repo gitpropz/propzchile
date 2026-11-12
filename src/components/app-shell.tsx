@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Building, FileText, Settings, LogOut, Menu, X, FileUp, Gauge } from "lucide-react";
+import { LayoutDashboard, Building, FileText, Settings, LogOut, Menu, X, FileUp, Gauge, Shield } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,6 +8,9 @@ import { PropzLogo } from "@/components/propz-logo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useAccount } from "@/hooks/use-account";
+import { useCurrentOrg } from "@/hooks/use-current-org";
+import { ACCOUNT_LABELS } from "@/lib/account-types";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -29,6 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
+    sessionStorage.removeItem("propz-support-organization");
     toast.success("Sesión cerrada");
     navigate({ to: "/auth", replace: true });
   }
@@ -78,13 +82,19 @@ function SidebarInner({
   onSignOut: () => void;
   onNavigate: () => void;
 }) {
+  const account = useAccount();
+  const org = useCurrentOrg();
+  const isGeneral = account.data?.account_type === "general_admin";
   return (
     <>
       <div className="px-5 py-6">
         <PropzLogo tone="inverse" wordmarkClassName="text-[1.75rem] text-sidebar-foreground" />
+        {account.data?.account_type && <p className="mt-3 text-xs text-sidebar-foreground/70">{ACCOUNT_LABELS[account.data.account_type]}</p>}
+        {isGeneral && org.data?.organizations && <p className="mt-2 break-words text-xs text-sidebar-primary">Soporte: {org.data.organizations.name}</p>}
       </div>
       <nav className="flex-1 space-y-0.5 px-3">
-        {nav.map((item) => {
+        {isGeneral && <Link to="/admin" onClick={onNavigate} className={cn("flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium", pathname === "/admin" ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70")}><Shield className="h-4 w-4 shrink-0" />Administración General</Link>}
+        {(isGeneral && !org.data ? [] : nav).map((item) => {
           const active = "match" in item && item.match
             ? pathname.startsWith(item.match)
             : pathname === item.to || pathname.startsWith(item.to + "/");
@@ -111,13 +121,14 @@ function SidebarInner({
         })}
       </nav>
       <div className="border-t border-sidebar-border p-3">
-        <button
+        <Button
+          variant="ghost"
           onClick={onSignOut}
           className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-propz hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
         >
           <LogOut className="h-[1.05rem] w-[1.05rem]" strokeWidth={1.75} />
           Cerrar sesión
-        </button>
+        </Button>
       </div>
     </>
   );

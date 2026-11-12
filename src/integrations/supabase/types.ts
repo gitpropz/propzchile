@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_admin_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after_value: Json | null
+          before_value: Json | null
+          created_at: string
+          id: string
+          organization_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+        }
+        Relationships: []
+      }
       bank_statement_imports: {
         Row: {
           account_number: string | null
@@ -167,6 +197,42 @@ export type Database = {
           },
         ]
       }
+      client_accounts: {
+        Row: {
+          account_type: string
+          created_at: string
+          organization_id: string
+          user_id: string
+        }
+        Insert: {
+          account_type: string
+          created_at?: string
+          organization_id: string
+          user_id: string
+        }
+        Update: {
+          account_type?: string
+          created_at?: string
+          organization_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monitored_services: {
         Row: {
           active: boolean
@@ -275,6 +341,50 @@ export type Database = {
             foreignKeyName: "organization_members_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_subscriptions: {
+        Row: {
+          currency: Database["public"]["Enums"]["currency"]
+          current_period_end: string | null
+          monthly_amount: number | null
+          notes: string | null
+          organization_id: string
+          plan_name: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          currency?: Database["public"]["Enums"]["currency"]
+          current_period_end?: string | null
+          monthly_amount?: number | null
+          notes?: string | null
+          organization_id: string
+          plan_name?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          currency?: Database["public"]["Enums"]["currency"]
+          current_period_end?: string | null
+          monthly_amount?: number | null
+          notes?: string | null
+          organization_id?: string
+          plan_name?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1028,7 +1138,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_client_setup: {
+        Args: { _account_type: string }
+        Returns: undefined
+      }
       create_org_for_current_user: { Args: { _name: string }; Returns: string }
+      general_admin_overview: { Args: never; Returns: Json }
+      get_account_context: { Args: never; Returns: Json }
       has_global_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

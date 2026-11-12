@@ -2,16 +2,24 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { ensureAccountSetup } from "@/lib/account-bootstrap";
+import { getAccountContext } from "@/lib/account-context";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
       throw redirect({ to: "/auth" });
     }
     await ensureAccountSetup();
-    return { user: data.user };
+    const account = await getAccountContext();
+    if (!account.account_type && location.pathname !== "/account-setup") {
+      throw redirect({ to: "/account-setup" });
+    }
+    if (account.account_type === "general_admin" && location.pathname === "/account-setup") {
+      throw redirect({ to: "/admin" });
+    }
+    return { user: data.user, account };
   },
   component: AuthedLayout,
   // Shown while the session is checked after the browser reloads the tab
