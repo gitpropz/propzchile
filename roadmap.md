@@ -1,4 +1,5 @@
 # Tasks
+- [ ] Close Prompt 1: verify live migration hashes, existing classifications, preserved relationships and both authenticated profiles; keep general administration unassigned.
 - [x] Add protected account types and migrate existing clients without changing their organizations.
 - [x] Adapt registration, account navigation and independent-owner property creation.
 - [x] Add restricted global support and subscription management (administrative records, not automated charging).
