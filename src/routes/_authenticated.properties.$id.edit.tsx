@@ -12,10 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccount } from "@/hooks/use-account";
+import { pageMeta } from "@/lib/page-meta";
 import { UNIT_TYPE_OPTIONS, type UnitType } from "@/lib/property-types";
 
 export const Route = createFileRoute("/_authenticated/properties/$id/edit")({
-  head: () => ({ meta: [{ title: "Editar propiedad — Propz" }] }),
+  head: () => pageMeta("Editar propiedad — Propz", "Actualiza los datos de una propiedad de tu cartera."),
   component: EditProperty,
 });
 

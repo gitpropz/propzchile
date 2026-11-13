@@ -4,6 +4,7 @@ import { Building, MapPin, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { pageMeta } from "@/lib/page-meta";
 import { useCurrentOrg } from "@/hooks/use-current-org";
 import { UNIT_TYPE_LABELS } from "@/lib/property-types";
 import type { Database } from "@/integrations/supabase/types";
@@ -13,7 +14,7 @@ type PropertyRow = Database["public"]["Tables"]["properties"]["Row"] & {
 };
 
 export const Route = createFileRoute("/_authenticated/properties/")({
-  head: () => ({ meta: [{ title: "Propiedades — Propz" }] }),
+  head: () => pageMeta("Propiedades — Propz", "Consulta las propiedades y unidades de tu organización."),
   component: PropertiesIndex,
 });
 

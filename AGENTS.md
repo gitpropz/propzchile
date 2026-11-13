@@ -15,3 +15,4 @@
 - Customer account types live in a protected client_accounts table, separate from legacy membership permissions; global administration derives exclusively from user_roles.superadmin to prevent public privilege escalation.
 - Account provisioning is transactional and idempotent in database functions; reuse existing memberships and organizations to avoid duplication on signup or concurrent login.
 - Global support selects an organization through the shared current-organization query; authorization remains in RLS and privileged functions, never in the picker.
+- Content routes define leaf-specific metadata, using pageMeta for simple pages; root metadata must not prescribe a cover image for every page.

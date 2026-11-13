@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { supabase } from "@/integrations/supabase/client";
+import { pageMeta } from "@/lib/page-meta";
 import { MonitoredServicesPanel } from "@/components/monitored-services-panel";
 import { UNIT_TYPE_LABELS, UNIT_TYPE_OPTIONS, CURRENCY_OPTIONS, type UnitType, type Currency } from "@/lib/property-types";
 import { formatMoney } from "@/lib/format";
@@ -28,7 +29,7 @@ type Property = Database["public"]["Tables"]["properties"]["Row"];
 type Unit = Database["public"]["Tables"]["rentable_units"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/properties/$id/")({
-  head: () => ({ meta: [{ title: "Propiedad — Propz" }] }),
+  head: () => pageMeta("Ficha de propiedad — Propz", "Unidades, contratos y servicios de tu propiedad."),
   validateSearch: (search: Record<string, unknown>): { tab?: string; unit?: string } => ({
     tab: typeof search.tab === "string" ? search.tab : undefined,
     unit: typeof search.unit === "string" ? search.unit : undefined,

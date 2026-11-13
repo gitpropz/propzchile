@@ -16,10 +16,11 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
 import { useAccount } from "@/hooks/use-account";
+import { pageMeta } from "@/lib/page-meta";
 import { UNIT_TYPE_OPTIONS, CURRENCY_OPTIONS, type UnitType, type Currency } from "@/lib/property-types";
 
 export const Route = createFileRoute("/_authenticated/properties/new")({
-  head: () => ({ meta: [{ title: "Nueva propiedad — Propz" }] }),
+  head: () => pageMeta("Nueva propiedad — Propz", "Registra una propiedad y sus unidades en tu organización."),
   component: NewProperty,
 });
 

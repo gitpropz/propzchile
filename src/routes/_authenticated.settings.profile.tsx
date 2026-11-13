@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/_authenticated/settings/profile")({
+  head: () => pageMeta("Mi perfil — Propz", "Datos de contacto de tu cuenta Propz."),
   component: ProfileSettings,
 });
 

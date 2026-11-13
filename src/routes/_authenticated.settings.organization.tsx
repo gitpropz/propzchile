@@ -10,9 +10,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
 import { useAccount } from "@/hooks/use-account";
 import { ACCOUNT_LABELS } from "@/lib/account-types";
+import { pageMeta } from "@/lib/page-meta";
 import { CURRENCY_OPTIONS, type Currency } from "@/lib/property-types";
 
 export const Route = createFileRoute("/_authenticated/settings/organization")({
+  head: () => pageMeta("Organización — Propz", "Perfil de cliente y configuración de tu organización."),
   component: OrgSettings,
 });
 

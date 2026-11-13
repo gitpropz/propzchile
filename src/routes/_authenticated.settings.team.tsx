@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentOrg } from "@/hooks/use-current-org";
+import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/_authenticated/settings/team")({
+  head: () => pageMeta("Equipo — Propz", "Miembros de tu organización en Propz."),
   component: TeamSettings,
 });
 
