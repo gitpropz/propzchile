@@ -1,11 +1,12 @@
 # Tasks
-- [ ] Close Prompt 1: verify live migration hashes, existing classifications, preserved relationships and both authenticated profiles; keep general administration unassigned.
+- [x] Close Prompt 1 read/access verification: both live migration hashes match; account classifications, original organization IDs, counts and relationship integrity verified; both authenticated browser profiles exercised; zero general administrators.
 - [x] Add protected account types and migrate existing clients without changing their organizations.
 - [x] Adapt registration, account navigation and independent-owner property creation.
 - [x] Add restricted global support and subscription management (administrative records, not automated charging).
 - [x] Test account isolation, registration rules and existing-data preservation (25 tests; property-admin browser flow).
-- [ ] Verify independent-owner browser flow: awaiting permission to test david.elghanayan@gmail.com.
-- [ ] Verify global-support browser flow: awaiting authorization to designate a General Administrator; none assigned.
+- [x] Verify both client browser profiles: real-session Dashboard, property list, profile-specific new-property form, own-organization reads, cross-organization isolation and general-administration denial; no runtime errors.
+- [ ] Verify public signup/email confirmation, password sign-in and actual create/edit saves: not exercised in this read-only review; do not report them as passed.
+- [ ] Verify global-support browser flow: deliberately deferred; General Administrator must remain unassigned.
 - [x] Apply Dashboard filters to monthly flow and comparisons; test and verify restoring totals.
 - [x] Remove Dashboard V2 and V3 and their navigation entries.
 - [x] Group included zero-rent units in the main home's Dashboard card without changing financial data.
