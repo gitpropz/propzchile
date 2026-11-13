@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { pageMeta } from "@/lib/page-meta";
 
 const tabs = [
   { to: "/settings/organization", label: "Organización" },
@@ -8,7 +9,7 @@ const tabs = [
 ] as const;
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Configuración — Propz" }] }),
+  head: () => pageMeta("Configuración — Propz", "Gestiona tu organización, equipo y perfil."),
   component: SettingsLayout,
 });
 

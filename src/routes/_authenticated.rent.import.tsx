@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { pageMeta } from "@/lib/page-meta";
 import { useCurrentOrg } from "@/hooks/use-current-org";
 import { formatCLP, formatDate } from "@/lib/format";
 import { errorToString } from "@/lib/bank-parsers";
@@ -100,7 +101,7 @@ function movementKey(m: StandardMovement): string {
 
 export const Route = createFileRoute("/_authenticated/rent/import")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Importar cartola bancaria — Propz" }] }),
+  head: () => pageMeta("Importar cartola bancaria — Propz", "Revisa los movimientos de tu cartola y concilia pagos de arriendos."),
   component: ImportPage,
 });
 

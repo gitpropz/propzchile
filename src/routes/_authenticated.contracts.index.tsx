@@ -4,6 +4,7 @@ import { FileText, MapPin, User, Calendar, AlertTriangle, Plus, ArrowRight, Cale
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { pageMeta } from "@/lib/page-meta";
 import { useCurrentOrg } from "@/hooks/use-current-org";
 import { formatMoney, formatDate } from "@/lib/format";
 import { UNIT_TYPE_LABELS } from "@/lib/property-types";
@@ -15,7 +16,7 @@ type Unit = Database["public"]["Tables"]["rentable_units"]["Row"] & {
 };
 
 export const Route = createFileRoute("/_authenticated/contracts/")({
-  head: () => ({ meta: [{ title: "Contratos — Propz" }] }),
+  head: () => pageMeta("Contratos — Propz", "Consulta arrendatarios y vencimientos de contratos de tu cartera."),
   component: ContractsIndex,
 });
 
