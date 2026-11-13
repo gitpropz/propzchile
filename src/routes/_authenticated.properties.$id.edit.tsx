@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useAccount } from "@/hooks/use-account";
 import { UNIT_TYPE_OPTIONS, type UnitType } from "@/lib/property-types";
 
 export const Route = createFileRoute("/_authenticated/properties/$id/edit")({
@@ -19,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/properties/$id/edit")({
 });
 
 function EditProperty() {
+  const account = useAccount();
+  const independent = account.data?.account_type === "independent_owner";
   const { id } = Route.useParams();
   const navigate = useNavigate();
 
@@ -99,10 +102,10 @@ function EditProperty() {
       <form onSubmit={submit} className="mt-8 space-y-8">
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="md:col-span-2 space-y-1.5">
+            {!independent && <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="name">Propietario</Label>
               <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
+            </div>}
             <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="addr">Dirección</Label>
               <Input id="addr" required value={address} onChange={(e) => setAddress(e.target.value)} />
