@@ -88,8 +88,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Propz — El centro de control de tu patrimonio inmobiliario" },
       { name: "twitter:description", content: "Propz es la plataforma inteligente para inversionistas inmobiliarios: controla, automatiza y haz crecer tu patrimonio desde un solo lugar." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/hhXR3B3XvETGLUNfshWcFyeOF7D2/social-images/social-1785112359916-175415.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/hhXR3B3XvETGLUNfshWcFyeOF7D2/social-images/social-1785112359916-175415.webp" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
