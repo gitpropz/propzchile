@@ -1,8 +1,10 @@
 # Tasks
-- [ ] Add protected account types and migrate existing clients without changing their organizations.
-- [ ] Adapt registration, account navigation and independent-owner property creation.
-- [ ] Add restricted global support and subscription management.
-- [ ] Test account isolation, registration rules and existing-data preservation.
+- [x] Add protected account types and migrate existing clients without changing their organizations.
+- [x] Adapt registration, account navigation and independent-owner property creation.
+- [x] Add restricted global support and subscription management (administrative records, not automated charging).
+- [x] Test account isolation, registration rules and existing-data preservation (25 tests; property-admin browser flow).
+- [ ] Verify independent-owner browser flow: awaiting permission to test david.elghanayan@gmail.com.
+- [ ] Verify global-support browser flow: awaiting authorization to designate a General Administrator; none assigned.
 - [x] Apply Dashboard filters to monthly flow and comparisons; test and verify restoring totals.
 - [x] Remove Dashboard V2 and V3 and their navigation entries.
 - [x] Group included zero-rent units in the main home's Dashboard card without changing financial data.
