@@ -5,7 +5,7 @@ import postgres from "postgres";
 
 // Only run against a disposable database. Never point this suite at a hosted portfolio.
 const enabled = process.env.PROPZ_INTEGRITY_DISPOSABLE_DB === "yes";
-const db = postgres({ host: "127.0.0.1", port: 55432, database: "postgres", username: "integrity_test", max: 1 });
+const db = postgres({ host: "127.0.0.1", port: 55432, database: "postgres", username: "integrity_test", ssl: false, max: 1 });
 const id = (n: number) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;
 const orgA = id(1), orgB = id(2);
 const relations = [
