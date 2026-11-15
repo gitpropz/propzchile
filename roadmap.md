@@ -1,4 +1,5 @@
 # Tasks
+- [ ] Audit and enforce the requested cross-organization relationships and rent-payment recomputation; preserve all rows and run only targeted integrity tests.
 - [x] Close Prompt 1 read/access verification: both live migration hashes match; account classifications, original organization IDs, counts and relationship integrity verified; both authenticated browser profiles exercised; zero general administrators.
 - [x] Add protected account types and migrate existing clients without changing their organizations.
 - [x] Adapt registration, account navigation and independent-owner property creation.
