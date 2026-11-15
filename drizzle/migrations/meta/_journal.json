@@ -15,6 +15,13 @@
       "when": 1794593143230,
       "tag": "0001_ensure_account_signup_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794710605562,
+      "tag": "0002_multi_company_referential_integrity",
+      "breakpoints": true
     }
   ]
 }
