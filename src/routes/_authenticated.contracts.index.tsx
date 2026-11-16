@@ -29,7 +29,7 @@ function ContractsIndex() {
     queryFn: async (): Promise<Unit[]> => {
       const { data, error } = await supabase
         .from("rentable_units")
-        .select("*, properties:property_id(id, name, address)")
+        .select("*, properties!rentable_units_property_id_fkey(id, name, address)")
         .eq("organization_id", orgId!)
         .eq("rent_active", true)
         .order("created_at", { ascending: true });

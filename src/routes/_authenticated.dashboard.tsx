@@ -169,7 +169,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rentable_units")
-        .select("*, properties:property_id(id,name,address,comuna)")
+        .select("*, properties!rentable_units_property_id_fkey(id,name,address,comuna)")
         .eq("organization_id", orgId!)
         .order("created_at", { ascending: true });
       if (error) throw error;
