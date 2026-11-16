@@ -141,7 +141,7 @@ function ImportPage() {
     queryFn: async (): Promise<Unit[]> => {
       const { data, error } = await supabase
         .from("rentable_units")
-        .select("*, properties:property_id(id,name)")
+        .select("*, properties!rentable_units_property_id_fkey(id,name)")
         .eq("organization_id", orgId!);
       if (error) throw error;
       return (data ?? []) as Unit[];

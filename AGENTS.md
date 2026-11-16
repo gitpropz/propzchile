@@ -16,3 +16,5 @@
 - Account provisioning is transactional and idempotent in database functions; reuse existing memberships and organizations to avoid duplication on signup or concurrent login.
 - Global support selects an organization through the shared current-organization query; authorization remains in RLS and privileged functions, never in the picker.
 - Content routes define leaf-specific metadata, using pageMeta for simple pages; root metadata must not prescribe a cover image for every page.
+- Cross-organization references use composite foreign keys including organization_id; keep one relationship per link and use explicit constraint hints for composite API embeds to avoid ambiguous or unsupported column hints.
+- Allocation recomputation validates both old and new payment organizations and scopes aggregates to the locked parent organization so allocation moves cannot contaminate totals.

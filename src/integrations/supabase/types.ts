@@ -176,13 +176,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "bank_transactions_import_id_fkey"
-            columns: ["import_id"]
-            isOneToOne: false
-            referencedRelation: "bank_statement_imports"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_transactions_import_id_organization_fkey"
             columns: ["import_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "bank_statement_imports"
@@ -190,13 +183,6 @@ export type Database = {
           },
           {
             foreignKeyName: "bank_transactions_matched_unit_id_fkey"
-            columns: ["matched_unit_id"]
-            isOneToOne: false
-            referencedRelation: "rentable_units"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bank_transactions_matched_unit_id_organization_fkey"
             columns: ["matched_unit_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "rentable_units"
@@ -314,13 +300,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "monitored_services_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "monitored_services_property_id_organization_fkey"
             columns: ["property_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -328,13 +307,6 @@ export type Database = {
           },
           {
             foreignKeyName: "monitored_services_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "rentable_units"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "monitored_services_unit_id_organization_fkey"
             columns: ["unit_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "rentable_units"
@@ -718,13 +690,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "rent_payment_allocations_bank_transaction_id_fkey"
-            columns: ["bank_transaction_id"]
-            isOneToOne: false
-            referencedRelation: "bank_transactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rent_payment_allocations_bank_transaction_id_organization_fkey"
             columns: ["bank_transaction_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "bank_transactions"
@@ -739,13 +704,6 @@ export type Database = {
           },
           {
             foreignKeyName: "rent_payment_allocations_rent_payment_id_fkey"
-            columns: ["rent_payment_id"]
-            isOneToOne: false
-            referencedRelation: "rent_payments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rent_payment_allocations_rent_payment_id_organization_fkey"
             columns: ["rent_payment_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "rent_payments"
@@ -824,13 +782,6 @@ export type Database = {
           },
           {
             foreignKeyName: "rent_payments_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rent_payments_property_id_organization_fkey"
             columns: ["property_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -838,13 +789,6 @@ export type Database = {
           },
           {
             foreignKeyName: "rent_payments_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "rentable_units"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rent_payments_unit_id_organization_fkey"
             columns: ["unit_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "rentable_units"
@@ -944,13 +888,6 @@ export type Database = {
           },
           {
             foreignKeyName: "rentable_units_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "rentable_units_property_id_organization_fkey"
             columns: ["property_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -1086,13 +1023,6 @@ export type Database = {
           },
           {
             foreignKeyName: "service_readings_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_readings_property_id_organization_fkey"
             columns: ["property_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -1100,13 +1030,6 @@ export type Database = {
           },
           {
             foreignKeyName: "service_readings_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "monitored_services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_readings_service_id_organization_fkey"
             columns: ["service_id", "organization_id"]
             isOneToOne: false
             referencedRelation: "monitored_services"

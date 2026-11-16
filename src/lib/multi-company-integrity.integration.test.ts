@@ -42,9 +42,10 @@ before(async () => {
     INSERT INTO public.service_readings VALUES ('${id(70)}','${orgA}','${id(10)}','${id(60)}'),('${id(71)}','${orgB}','${id(11)}','${id(61)}');
     INSERT INTO public.rent_payment_allocations(id,organization_id,rent_payment_id,bank_transaction_id) VALUES ('${id(80)}','${orgA}','${id(40)}','${id(50)}');
   `);
-  const migrationPath = process.env.PROPZ_INTEGRITY_MIGRATION;
-  if (!migrationPath) throw new Error("Set the path to the exact integrity migration");
-  await db.unsafe(readFileSync(migrationPath, "utf8"));
+  for (const migrationPath of [
+    "drizzle/migrations/0002_multi_company_referential_integrity.sql",
+    "drizzle/migrations/0003_deduplicate_organization_foreign_keys.sql",
+  ]) await db.unsafe(readFileSync(migrationPath, "utf8"));
   await db.unsafe("CREATE TRIGGER trg_rent_alloc_recompute AFTER INSERT OR UPDATE OR DELETE ON public.rent_payment_allocations FOR EACH ROW EXECUTE FUNCTION public.recompute_rent_payment_totals()");
 });
 after(async () => { await db.end(); });
